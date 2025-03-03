@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const mongo = "mongodb+srv://app-backend:app-backend@cluster0.ssuxf.mongodb.net/";
+
 
 // ✅ Configure CORS for all origins
 app.use(
@@ -46,7 +46,7 @@ app.use(express.json());
 
 //database connection
 //connectDB();
-mongoose.connect(mongo)
+mongoose.connect(process.env.MONGO_URI)
 .then(()=> console.log("mongodb is connected"))
 .catch((e)=> console.log(e));
 
