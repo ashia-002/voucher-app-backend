@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const voucherRoutes = require('./src/routes/voucherRoutes');
@@ -9,6 +10,36 @@ const mongoose = require('mongoose');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const mongo = "mongodb+srv://app-backend:app-backend@cluster0.ssuxf.mongodb.net/";
+
+// ✅ Configure CORS for all origins
+app.use(
+    cors({
+      origin: "*", // Allows requests from ANY origin (⚠️ For development only)
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+  
+  // OR - Allow Specific Origins (Recommended for production)
+  const allowedOrigins = [
+    "http://localhost:3000",  // If testing locally
+    "https://your-flutter-app.web.app", // Your deployed Flutter web app (if applicable)
+    "https://your-frontend-domain.com", // Your actual frontend domain
+  ];
+  
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      credentials: true, // Allow cookies & authentication headers
+    })
+  );
+  
 
 //to parse json
 app.use(express.json());
