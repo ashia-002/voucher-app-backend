@@ -11,7 +11,7 @@ router.get("/stores", authenticate, authorizeBuyer, getStoreCards); // Get all s
 router.get("/store/:storeId", authenticate, authorizeBuyer, getStoreDetails); // Get store details & vouchers
 
 // 🔵 Public Route (No Authentication)
-//router.get("/active", getSellerVouchers); // Get all active vouchers (accessible to everyone)
+// router.get("/active", getSellerVouchers); // Get all active vouchers (accessible to everyone)
 
 // 🔵 Seller Routes (Protected)
 router.post("/add", authenticate, authorizeSeller, addVoucher); // Add voucher

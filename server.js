@@ -4,6 +4,7 @@ const connectDB = require('./src/config/db');
 const authRoutes = require('./src/routes/authRoutes');
 const voucherRoutes = require('./src/routes/voucherRoutes');
 const cartRoutes = require('./src/routes/cartRoutes');
+const orderRoutes = require('./src/routes/orderRoutes');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -54,6 +55,7 @@ mongoose.connect(process.env.MONGO_URI)
 app.use("/api/auth", authRoutes);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/order", orderRoutes);
 
 //global error handler
 app.use((err, req, res, next)=> {

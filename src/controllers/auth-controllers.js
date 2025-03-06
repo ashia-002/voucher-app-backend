@@ -2,6 +2,9 @@ const Buyer = require("../models/Buyer");
 const Seller = require("../models/Seller");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+require('dotenv').config();
 
 const register = async (req, res) => {
   const { name, email, password, phoneNumber, role, storeName, location, description } = req.body;
@@ -66,6 +69,52 @@ const login = async (req, res) => {
   }
 };
 
+//?Google Authentication
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: "/api/auth/google/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails[0].value;
+        let user = await Buyer.findOne({email}) || await Seller.findOne({email});
 
+        if(!user){
+          user = new Buyer(
+            {
+              name: profile.displayName,
+              email,
+              password: "",
+            }
+          );
+          await user.save();
+        }
 
-module.exports = { register, login };
+        return done(null, user);
+      } catch (error) {
+        return done(error, null);
+      }
+    }
+  )
+);
+
+//Google Login Route Handler
+const googleLogin = passport.authenticate("google", {scope: ["profile", "email"]});
+
+const googleCallback = (req, res) => {
+  passport.authenticate("google", (err, user)=> {
+    if(err || !user){
+      return res.redirect("/login");
+    }
+
+    const role = user.storeName ? "seller" : "buyer";
+    const token = jwt.sign({id: user._id, role}, process.env.JWT_SECRET, {expiresIn: "1d"});
+
+    res.redirect(`your-frontend-app://google-auth-success?token=${token}`);
+  })(req, res);
+};
+
+module.exports = { register, login, googleLogin, googleCallback };
