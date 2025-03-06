@@ -117,4 +117,15 @@ const googleCallback = (req, res) => {
   })(req, res);
 };
 
-module.exports = { register, login, googleLogin, googleCallback };
+//Logout function
+const logout = (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "Strict",
+  });
+
+  res.status(200).json({ msg: "Logout successful" });
+};
+
+module.exports = { register, login, googleLogin, googleCallback, logout };
