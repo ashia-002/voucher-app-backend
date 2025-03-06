@@ -80,20 +80,51 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         const email = profile.emails[0].value;
-        let user = await Buyer.findOne({email}) || await Seller.findOne({email});
+        // Check if the user exists as a buyer or seller
+        let buyer = await Buyer.findOne({ email });
+        let seller = await Seller.findOne({ email });
 
-        if(!user){
-          user = new Buyer(
+        if(buyer){
+          // Buyer found → Proceed with login
+          const token = jwt.sign({ id: buyer._id, role: "buyer" }, process.env.JWT_SECRET, {
+            expiresIn: "7d",
+          });
+
+          return done(null, { success: true, message: "Buyer login successful", token, user: buyer });
+        }
+
+        if(seller){
+          //Seller found → Proceed with login
+          const token = jwt.sign({ id: seller._id, role: "seller" }, process.env.JWT_SECRET, {
+            expiresIn: "7d",
+          });
+  
+          return done({ success: true, message: "Seller login successful", token, user: seller });
+        }
+
+        if(!buyer){
+          buyer = new Buyer(
             {
               name: profile.displayName,
               email,
-              password: "",
+              password: " ",  // You can leave the password empty
+              phoneNumber: "000000000", // Provide a default empty phone number
             }
           );
-          await user.save();
+          await buyer.save();
         }
+        // Generate JWT token for the new buyer
+        const token = jwt.sign({ id: buyer._id, role: "buyer" }, process.env.JWT_SECRET, {
+          expiresIn: "7d",
+        });
 
-        return done(null, user);
+        return done({
+          success: true,
+          message: "Buyer account created and logged in.",
+          token,
+          user: newBuyer,
+          notify: "Please update your phone number in your profile.",
+        });
       } catch (error) {
         return done(error, null);
       }
@@ -105,13 +136,19 @@ passport.use(
 const googleLogin = passport.authenticate("google", {scope: ["profile", "email"]});
 
 const googleCallback = (req, res) => {
-  passport.authenticate("google", (err, user)=> {
-    if(err || !user){
-      return res.redirect("/login");
+  passport.authenticate("google", (err, result)=> {
+    if(err || !result){
+      //return res.redirect("/login");
+      // Send an error response instead of redirecting
+      return res.status(400).json({
+        success: false,
+        message: "Authentication failed",
+        error: err || "User not found"
+      });
     }
 
-    const role = user.storeName ? "seller" : "buyer";
-    const token = jwt.sign({id: user._id, role}, process.env.JWT_SECRET, {expiresIn: "1d"});
+    // Using the result returned from passport.authenticate (after Google login)
+    const { token, user } = result;
 
     res.redirect(`your-frontend-app://google-auth-success?token=${token}`);
   })(req, res);
