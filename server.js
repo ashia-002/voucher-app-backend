@@ -47,7 +47,7 @@ app.use(express.json());
 
 //database connection
 //connectDB();
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect("mongodb+srv://ashiasultana23100056:app-backend02@cluster0.7nxmd.mongodb.net/")
 .then(()=> console.log("mongodb is connected"))
 .catch((e)=> console.log(e));
 
@@ -73,4 +73,5 @@ app.get("/", (req, res) => {
 app.listen(PORT, ()=> {
     console.log(`Server is running on ${PORT}`);
     console.log("JWT_SECRET:", process.env.JWT_SECRET ? "Loaded ✅" : "Missing ❌"); 
+    console.log("Stripe API Key:", process.env.STRIPE_SECRET_KEY ? "Loaded" : "Missing");
 });

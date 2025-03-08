@@ -6,7 +6,11 @@ const BuyerSchema = new mongoose.Schema({
   password: { type: String, required: true },
   phoneNumber: { type: String, required: true },
   role: { type: String, default: "buyer" },
-  profileImage: { type: String, default: "" }, // Stores profile image URL
+  profileImage: { 
+    data: Buffer, 
+    contentType: { type: String, default: "image/png" }, 
+    default: { data: Buffer.alloc(0) } 
+  }, // Stores profile image as Buffer
   createdAt: { type: Date, default: Date.now }, // Timestamp when user is created
   purchasedVouchers: [
     {
@@ -15,6 +19,12 @@ const BuyerSchema = new mongoose.Schema({
     }
   ],
   balance: { type: Number, default: 0 }, // Stores reward points/money
+  resetPasswordToken: { type: String },
+  resetPasswordTokenExpiration: { type: Date },
+  isVerified: {
+    type: Boolean,
+    default: false, // Set default to false to indicate not verified
+  },
 });
 
 module.exports = mongoose.model("Buyer", BuyerSchema);
