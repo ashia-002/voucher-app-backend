@@ -47,7 +47,7 @@ app.use(express.json());
 
 //database connection
 //connectDB();
-mongoose.connect("mongodb+srv://ashiasultana23100056:app-backend02@cluster0.7nxmd.mongodb.net/")
+mongoose.connect(process.env.MONGO_URI)
 .then(()=> console.log("mongodb is connected"))
 .catch((e)=> console.log(e));
 
