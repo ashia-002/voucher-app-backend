@@ -237,13 +237,13 @@ const requestPasswordReset = async (req, res) => {
 
     await user.save();
 
-    const resetLink = `${process.env.BASE_URL}/api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
+        pass: "vdqg dlda bkmt amoi",
       },
     });
 
