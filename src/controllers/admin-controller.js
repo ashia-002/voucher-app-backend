@@ -2,6 +2,7 @@ const Buyer = require("../models/Buyer");
 const Seller = require("../models/Seller");
 const bcrypt = require("bcryptjs");
 const Order = require("../models/Order");
+const Voucher = require("../models/Voucher");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
