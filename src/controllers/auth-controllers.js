@@ -53,7 +53,7 @@ const register = async (req, res) => {
       html: `
         <h1>Welcome to Our Platform!</h1>
         <p>Please verify your email address by clicking the link below:</p>
-        <a href="http://localhost:3000/api/auth/verify-email?token=${token}">Verify Email</a>
+        <a href="https://voucher-app-backend.vercel.app/api/auth/verify-email?token=${token}">Verify Email</a>
       `,
     };
 
