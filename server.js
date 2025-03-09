@@ -5,6 +5,7 @@ const authRoutes = require('./src/routes/authRoutes');
 const voucherRoutes = require('./src/routes/voucherRoutes');
 const cartRoutes = require('./src/routes/cartRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
+const profileRoutes = require('./src/routes/profileRoutes');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -56,6 +57,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
+app.use("/api/profile", profileRoutes);
 
 //global error handler
 app.use((err, req, res, next)=> {
