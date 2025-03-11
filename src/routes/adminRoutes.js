@@ -27,6 +27,6 @@ router.get("/vouchers/expired", authorizeAdmin, getAllExpiredVouchers);
 router.put("/vouchers/:voucherId", authorizeAdmin, updateVoucher);
 
 // Delete voucher (Admin)
-router.delete("/vouchers/:voucherId", authorizeAdmin, deleteVoucher);
+router.delete("/vouchers/delete/:voucherId", authorizeAdmin, deleteVoucher);
 
 module.exports = router;
