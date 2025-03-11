@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const{addVoucher, getSellerVouchers, getExpiredVouchers,
-    updateVoucher, deleteVoucher, getStoreCards, getStoreDetails
+    updateVoucher, deleteVoucher, getSellerVoucherStats, getStoreCards, getStoreDetails
 } = require("../controllers/voucher-controller");
 
 const { authenticate, authorizeSeller, authorizeBuyer } = require("../middlewares/authentication");
@@ -19,5 +19,6 @@ router.get("/seller", authenticate, authorizeSeller, getSellerVouchers); // Get 
 router.get("/seller/expired", authenticate, authorizeSeller, getExpiredVouchers); // Get seller's expired vouchers
 router.put("/:voucherId", authenticate, authorizeSeller, updateVoucher); // Update voucher
 router.delete("/:voucherId", authenticate, authorizeSeller, deleteVoucher); // Delete voucher
+router.get("/seller/voucher-stats", authenticate, authorizeSeller, getSellerVoucherStats); //Voucher Stats
 
 module.exports = router;

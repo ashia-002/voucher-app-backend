@@ -128,6 +128,42 @@ exports.deleteVoucher = async (req, res) => {
   }
 };
 
+// ✅ Get Voucher Stats (Seller)
+exports.getSellerVoucherStats = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized: Seller ID is missing" });
+    }
+
+    const sellerId = req.user.id;
+
+    // Fetch total vouchers
+    const totalVouchers = await Voucher.countDocuments({ sellerId });
+
+    // Fetch expired vouchers
+    const expiredVouchers = await Voucher.countDocuments({
+      sellerId,
+      expiryDate: { $lt: new Date() },
+    });
+
+    // Fetch total vouchers sold
+    const totalVouchersSold = await Voucher.aggregate([
+      { $match: { sellerId: mongoose.Types.ObjectId(sellerId) } },
+      { $group: { _id: null, totalSold: { $sum: "$unitsSold" } } },
+    ]);
+
+    res.json({
+      totalVouchers,
+      expiredVouchers,
+      totalVouchersSold: totalVouchersSold.length > 0 ? totalVouchersSold[0].totalSold : 0,
+    });
+  } catch (error) {
+    console.error("Error fetching seller voucher stats:", error);
+    res.status(500).json({ message: "Error fetching seller voucher stats", error: error.message });
+  }
+};
+
+
 
 // ✅ Get Store Cards (Buyer)
 exports.getStoreCards = async (req, res) => {
