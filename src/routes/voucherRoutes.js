@@ -17,8 +17,8 @@ router.get("/store/:storeId", authenticate, authorizeBuyer, getStoreDetails); //
 router.post("/add", authenticate, authorizeSeller, addVoucher); // Add voucher
 router.get("/seller", authenticate, authorizeSeller, getSellerVouchers); // Get seller's active vouchers
 router.get("/seller/expired", authenticate, authorizeSeller, getExpiredVouchers); // Get seller's expired vouchers
-router.put("/:voucherId", authenticate, authorizeSeller, updateVoucher); // Update voucher
-router.delete("/:voucherId", authenticate, authorizeSeller, deleteVoucher); // Delete voucher
+router.put("seller/:voucherId", authenticate, authorizeSeller, updateVoucher); // Update voucher
+router.delete("seller/:voucherId", authenticate, authorizeSeller, deleteVoucher); // Delete voucher
 router.get("/seller/voucher-stats", authenticate, authorizeSeller, getSellerVoucherStats); //Voucher Stats
 
 module.exports = router;
