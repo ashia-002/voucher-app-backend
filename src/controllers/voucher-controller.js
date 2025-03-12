@@ -56,10 +56,12 @@ exports.getAllActiveVouchers = async (req, res) => {
         const seller = await Seller.findById(voucher.sellerId).select("profileImage");
 
         let profileImage = null;
-        if (store.profileImage && store.profileImage.data && store.profileImage.data.length > 0) {
-          profileImage = `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString("base64")}`;
+        if (seller && seller.profileImage && seller.profileImage.data) {
+          sellerProfileImage = typeof seller.profileImage.data === "string"
+            ? `data:${seller.profileImage.contentType};base64,${seller.profileImage.data}`
+            : `data:${seller.profileImage.contentType};base64,${seller.profileImage.data.toString("base64")}`;
         }
-        
+
         return {
           ...voucher.toObject(),
           profileImage,
