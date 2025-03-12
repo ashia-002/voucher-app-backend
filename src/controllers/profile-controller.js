@@ -23,21 +23,10 @@ const viewProfile = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    //  // If the user has a profile image, convert the binary data to base64
-    //  if (user.profileImage && user.profileImage.data) {
-    //     user.profileImage.data = user.profileImage.data.toString('base64');
-    //   }
-
-    // Convert Mongoose document to plain object
-    let userObj = user.toObject();
-
-    // If the user has a profile image, convert the binary data to base64
-    if (userObj.profileImage && userObj.profileImage.data) {
-      userObj.profileImage = {
-        data: userObj.profileImage.data.toString("base64"),
-        contentType: userObj.profileImage.contentType,
-      };
-    }
+     // If the user has a profile image, convert the binary data to base64
+     if (user.profileImage && user.profileImage.data) {
+        user.profileImage.data = user.profileImage.data.toString('base64');
+      }
 
     res.json({ success: true, user });
   } catch (error) {
@@ -56,10 +45,10 @@ const updateProfile = async (req, res) => {
   
       let updateData = { name, email };
   
-      // If an image is uploaded, convert it to binary (Buffer)
+      // If an image is uploaded, add it to updateData
       if (req.file) {
         updateData.profileImage = {
-          data: Buffer.from(req.file.buffer), // Convert file to binary
+          data: req.file.buffer, // Store image in binary format
           contentType: req.file.mimetype,
         };
       }
