@@ -51,11 +51,25 @@ exports.getAllActiveVouchers = async (req, res) => {
       expiryDate: { $gte: new Date() } // Fetch only active vouchers
     });
 
-    res.json({ vouchers });
+    const enrichedVouchers = await Promise.all(
+      vouchers.map(async (voucher) => {
+        const seller = await Seller.findById(voucher.sellerId).select("profileImage");
+
+        return {
+          ...voucher.toObject(),
+          sellerProfileImage: seller && seller.profileImage 
+            ? `data:${seller.profileImage.contentType};base64,${seller.profileImage.data.toString("base64")}`
+            : null
+        };
+      })
+    );
+
+    res.json({ vouchers: enrichedVouchers });
   } catch (error) {
     res.status(500).json({ message: "Error fetching active vouchers", error });
   }
 };
+
 
 
 // Get All Active Vouchers for a perticular seller
@@ -168,7 +182,7 @@ exports.getSellerVoucherStats = async (req, res) => {
 // ✅ Get Store Cards (Buyer)
 exports.getStoreCards = async (req, res) => {
   try {
-    const stores = await Seller.find().select("storeName location");
+    const stores = await Seller.find().select("storeName location profileImage");
 
     const storeData = await Promise.all(
       stores.map(async (store) => {
@@ -178,6 +192,7 @@ exports.getStoreCards = async (req, res) => {
           location: store.location,
           bestPrice: bestVoucher ? bestVoucher.priceOptions[0].salePrice : "N/A",
           storeId: store._id,
+          profileImage: store.profileImage ? `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString('base64')}` : null,
         };
       })
     );
