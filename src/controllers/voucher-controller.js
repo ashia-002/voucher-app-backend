@@ -225,10 +225,16 @@ exports.getStoreDetails = async (req, res) => {
     const { storeId } = req.params; // storeId is actually the sellerId in your case
 
     // Fetch store details from the Seller collection
-    const store = await Seller.findById(storeId).select("storeName location description");
+    const store = await Seller.findById(storeId).select("storeName location description profileImage");
 
     if (!store) {
       return res.status(404).json({ message: "Store not found" });
+    }
+
+    // Ensure profileImage is properly handled
+    let profileImage = null;
+    if (store.profileImage && store.profileImage.data && store.profileImage.data.length > 0) {
+      profileImage = `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString("base64")}`;
     }
 
     // Fetch all active vouchers for the store
@@ -237,7 +243,7 @@ exports.getStoreDetails = async (req, res) => {
       expiryDate: { $gte: new Date() } // Only fetch active vouchers
     });
 
-    res.json({ store, vouchers });
+    res.json({ store, vouchers,  profileImage});
   } catch (error) {
     console.error("Error fetching store details:", error);
     res.status(500).json({ error: "Internal Server Error" });
