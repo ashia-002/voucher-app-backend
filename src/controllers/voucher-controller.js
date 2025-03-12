@@ -243,7 +243,15 @@ exports.getStoreDetails = async (req, res) => {
       expiryDate: { $gte: new Date() } // Only fetch active vouchers
     });
 
-    res.json({ store, vouchers,  profileImage});
+    res.json({ 
+      store: {
+        storeName: store.storeName,
+        location: store.location,
+        description: store.description,
+        profileImage, // Include profile image in response
+      },
+      vouchers 
+    });
   } catch (error) {
     console.error("Error fetching store details:", error);
     res.status(500).json({ error: "Internal Server Error" });
