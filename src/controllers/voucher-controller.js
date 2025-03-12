@@ -187,12 +187,20 @@ exports.getStoreCards = async (req, res) => {
     const storeData = await Promise.all(
       stores.map(async (store) => {
         const bestVoucher = await Voucher.findOne({ sellerId: store._id }).sort({ unitsSold: -1 });
+
+        // Ensure profileImage is properly handled
+        let profileImage = null;
+        if (store.profileImage && store.profileImage.data && store.profileImage.data.length > 0) {
+          profileImage = `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString("base64")}`;
+        }
+
         return {
           storeName: store.storeName,
           location: store.location,
           bestPrice: bestVoucher ? bestVoucher.priceOptions[0].salePrice : "N/A",
           storeId: store._id,
-          profileImage: store.profileImage ? `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString('base64')}` : null,
+          //profileImage: store.profileImage ? `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString('base64')}` : null,
+          profileImage,
         };
       })
     );
