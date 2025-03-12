@@ -197,8 +197,6 @@ exports.getStoreCards = async (req, res) => {
         let profileImage = null;
         if (store.profileImage && store.profileImage.data && store.profileImage.data.length > 0) {
           profileImage = `data:${store.profileImage.contentType};base64,${store.profileImage.data.toString("base64")}`;
-        }else{
-          return res.status(404).json({ message: "Store Image not found" });
         }
 
         return {
