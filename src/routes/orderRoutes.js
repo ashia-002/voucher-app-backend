@@ -15,6 +15,6 @@ router.get("/revenue", authenticate, authorizeSeller, getSellerRevenue);
 // 📌 Buyer places an order
 router.post("/place", authenticate, authorizeBuyer, placeOrder);
 // 📌 Buyer views order history
-router.get("/order-history", authenticate, authorizeBuyer, getBuyerOrders);
+router.get("/buyer-orders", authenticate, authorizeBuyer, getBuyerOrders);
 
 module.exports = router;
