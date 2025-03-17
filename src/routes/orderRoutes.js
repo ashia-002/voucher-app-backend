@@ -4,16 +4,16 @@ const { authenticate, authorizeSeller, authorizeBuyer } = require("../middleware
 const { getSellerCustomers,  getSellerSummary, getSellerRevenue, placeOrder, getBuyerOrders } = require("../controllers/order-controller");
 
 // 📌 Seller gets list of customers & their vouchers
-router.get("/customers", authenticate, authorizeSeller, getSellerCustomers);
+router.get("/seller/customers", authenticate, authorizeSeller, getSellerCustomers);
 // 📌 Seller gets order summary
-router.get("/summary", authenticate, authorizeSeller, getSellerSummary);
+router.get("/seller/summary", authenticate, authorizeSeller, getSellerSummary);
 
-router.get("/revenue", authenticate, authorizeSeller, getSellerRevenue);
+router.get("/seller/revenue", authenticate, authorizeSeller, getSellerRevenue);
 
 
 // 📌 Buyer places an order
-router.post("/place", authenticate, authorizeBuyer, placeOrder);
+router.post("/buyer/place", authenticate, authorizeBuyer, placeOrder);
 // 📌 Buyer views order history
-router.get("/buyer-orders", authenticate, authorizeBuyer, getBuyerOrders);
+router.get("/buyer/order-history", authenticate, authorizeBuyer, getBuyerOrders);
 
 module.exports = router;
