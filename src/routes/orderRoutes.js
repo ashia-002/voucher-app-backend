@@ -8,6 +8,7 @@ router.get("/seller/customers", authenticate, authorizeSeller, getSellerCustomer
 // 📌 Seller gets order summary
 router.get("/seller/summary", authenticate, authorizeSeller, getSellerSummary);
 
+//Seller gets revenue
 router.get("/seller/revenue", authenticate, authorizeSeller, getSellerRevenue);
 
 
