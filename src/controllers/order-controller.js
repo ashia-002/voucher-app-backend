@@ -56,6 +56,28 @@ const getSellerSummary = async (req, res) => {
       res.status(500).json({ message: "Server error", error: error.message });
     }
   };
+
+const getSellerRevenue = async (req, res) => {
+    try {
+      const sellerId = req.user._id; // Get seller ID from JWT
+  
+      // Fetch all orders for this seller and populate voucher details
+      const orders = await Order.find({ sellerId }).populate("vouchers.voucherId", "price");
+  
+      // Calculate total revenue
+      let totalRevenue = 0;
+      orders.forEach(order => {
+        order.vouchers.forEach(voucher => {
+          totalRevenue += voucher.voucherId.price; // Sum up the voucher prices
+        });
+      });
+  
+      res.json({ totalRevenue });
+    } catch (error) {
+      console.error("Error fetching seller revenue:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
   
 
 //?✅ Create a new order with buyerId, sellerId, and vouchers.
@@ -102,4 +124,4 @@ const getBuyerOrders = async (req, res) => {
   
 
 
-module.exports = { getSellerCustomers,  getSellerSummary, placeOrder, getBuyerOrders};
+module.exports = { getSellerCustomers,  getSellerSummary, getSellerRevenue, placeOrder, getBuyerOrders};
