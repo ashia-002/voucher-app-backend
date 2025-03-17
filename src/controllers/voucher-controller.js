@@ -168,7 +168,7 @@ exports.getSellerVoucherStats = async (req, res) => {
 
     // Fetch total vouchers sold
     const totalVouchersSold = await Voucher.aggregate([
-      { $match: { sellerId: mongoose.Types.ObjectId(sellerId) } },
+      { $match: { sellerId } },
       { $group: { _id: null, totalSold: { $sum: "$unitsSold" } } },
     ]);
 
