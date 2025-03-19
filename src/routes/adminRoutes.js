@@ -6,7 +6,7 @@ const { login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouch
 const {authorizeAdmin} = require("../middlewares/authentication");
 
 // Admin login route
-router.post("/login", login);
+router.post("/adminlogin", login);
 
 // Get all customers who bought from the admin
 router.get("/customers", authorizeAdmin, getAdminCustomers);
