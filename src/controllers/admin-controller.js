@@ -21,7 +21,7 @@ const login = async (req, res) => {
   }
 
   // Generate JWT token with role: "admin"
-  const token = jwt.sign({ email, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "1h" });
+  const token = jwt.sign({ email, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "3h" });
 
   res.status(200).json({ message: "Login successful", token });
 };
