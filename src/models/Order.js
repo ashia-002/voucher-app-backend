@@ -10,7 +10,8 @@ const orderSchema = new mongoose.Schema({
       expiryDate: Date,
       purchaseDate: { type: Date, default: Date.now }
     }
-  ]
+  ],
+  totalAmount: { type: Number, required: true } // Store total amount of order
 });
 
 module.exports = mongoose.model("Order", orderSchema);

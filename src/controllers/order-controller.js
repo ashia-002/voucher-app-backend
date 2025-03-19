@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const Voucher = require("../models/Voucher");
 
 
 const getSellerCustomers = async (req, res) => {
@@ -91,15 +92,47 @@ const placeOrder = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Create new order
+    // Fetch voucher details from the database
+    const voucherIds = vouchers.map(v => v.voucherId);
+    const voucherDetails = await Voucher.find({ _id: { $in: voucherIds } });
+
+    if (voucherDetails.length !== vouchers.length) {
+      return res.status(400).json({ message: "Invalid vouchers provided" });
+    }
+
+    // Calculate total amount
+    let totalAmount = 0;
+    const updatedVouchers = vouchers.map(v => {
+      const voucherInfo = voucherDetails.find(voucher => String(voucher._id) === String(v.voucherId));
+
+      if (!voucherInfo || !voucherInfo.priceOptions || voucherInfo.priceOptions.length === 0) {
+        throw new Error(`Invalid price for voucher ID: ${v.voucherId}`);
+      }
+
+      // Get the lowest sale price or actual price
+      const selectedPrice = voucherInfo.priceOptions.reduce((min, option) => {
+        return option.salePrice && option.salePrice > 0 ? Math.min(min, option.salePrice) : min;
+      }, voucherInfo.priceOptions[0].actualPrice);
+
+      if (typeof selectedPrice !== "number" || isNaN(selectedPrice)) {
+        throw new Error(`Invalid price value for voucher ID: ${v.voucherId}`);
+      }
+
+      totalAmount += selectedPrice; // Sum up the total price
+      return { ...v, price: selectedPrice }; // Add price to voucher details
+    });
+
+    // Create new order with total amount
     const newOrder = new Order({
       buyerId,
       sellerId,
-      vouchers
+      vouchers: updatedVouchers,
+      totalAmount, // Ensure this is a valid number
     });
 
     await newOrder.save();
     res.status(201).json({ message: "Order placed successfully", order: newOrder });
+
   } catch (error) {
     console.error("Error placing order:", error);
     res.status(500).json({ message: "Server error", error: error.message });

@@ -5,6 +5,7 @@ const Order = require("../models/Order");
 const Voucher = require("../models/Voucher");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const mongoose = require("mongoose");
 
 const login = async (req, res) => {
     const { email, password } = req.body;
@@ -64,18 +65,42 @@ const getAdminCustomers = async (req, res) => {
   
   const getAdminSellers = async (req, res) => {
     try {
-      // Find all sellers in the database
-      const sellers = await Seller.find().select('name email'); // Only select name and email fields
+      // Fetch all sellers
+      const sellers = await Seller.find().select("name email storeName");
   
       if (!sellers || sellers.length === 0) {
         return res.status(404).json({ message: "No sellers found." });
       }
   
-      // Return list of sellers with their names and emails
-      res.json(sellers);
+      // Process each seller to calculate revenue and active vouchers
+      const sellerStats = await Promise.all(
+        sellers.map(async (seller) => {
+          const sellerId = seller._id;
   
+          // Calculate total revenue from orders
+          const orders = await Order.find({ sellerId }).select("totalAmount");
+          const totalRevenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+  
+          // Count active vouchers (vouchers with expiry date in the future)
+          const activeVouchers = await Voucher.countDocuments({
+            sellerId: sellerId,
+            expiryDate: { $gte: new Date() },
+          });
+  
+          return {
+            sellerId,
+            name: seller.name,
+            email: seller.email,
+            storeName: seller.storeName,
+            totalRevenue,
+            activeVouchers,
+          };
+        })
+      );
+  
+      res.json(sellerStats);
     } catch (error) {
-      console.error("Error fetching sellers:", error);
+      console.error("Error fetching seller stats:", error);
       res.status(500).json({ message: "Server error", error: error.message });
     }
   };
@@ -205,5 +230,49 @@ const getAdminCustomers = async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   };
+
+  //totalRevenue, totalActiveVouchers, totalSoldVouchers, totalCustomers, sellersWithVouchers
+  const getAdminStats = async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== "admin") {
+        return res.status(403).json({ message: "Unauthorized" });
+      }
   
-module.exports = {login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher};
+      // Calculate total revenue
+      const totalRevenueResult = await Order.aggregate([
+        { $group: { _id: null, totalRevenue: { $sum: "$totalAmount" } } }
+      ]);
+      const totalRevenue = totalRevenueResult.length > 0 ? totalRevenueResult[0].totalRevenue : 0;
+  
+      // Count total active vouchers
+      const totalActiveVouchers = await Voucher.countDocuments({ expiryDate: { $gte: new Date() } });
+  
+      // Count total sold vouchers
+      const totalSoldVouchersResult = await Order.aggregate([
+        { $unwind: "$vouchers" }, 
+        { $group: { _id: null, totalSoldVouchers: { $sum: 1 } } }
+      ]);
+      const totalSoldVouchers = totalSoldVouchersResult.length > 0 ? totalSoldVouchersResult[0].totalSoldVouchers : 0;
+  
+      // Count total unique customers
+      const totalCustomers = await Order.distinct("buyerId").then((buyers) => buyers.length);
+  
+      // Count total sellers who have added at least one voucher
+      const sellersWithVouchers = await Voucher.distinct("sellerId").then((sellers) => sellers.length);
+  
+      res.json({
+        totalRevenue,
+        totalActiveVouchers,
+        totalSoldVouchers,
+        totalCustomers,
+        sellersWithVouchers,  // Updated this
+      });
+  
+    } catch (error) {
+      console.error("Error fetching admin stats:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+    }
+  };
+  
+  
+module.exports = {login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats};

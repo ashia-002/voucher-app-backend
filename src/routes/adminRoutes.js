@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher } = require("../controllers/admin-controller");
+const { login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats } = require("../controllers/admin-controller");
 
 // Middleware to protect routes and ensure the user is an admin
 const {authorizeAdmin} = require("../middlewares/authentication");
@@ -28,5 +28,8 @@ router.put("/vouchers/:voucherId", authorizeAdmin, updateVoucher);
 
 // Delete voucher (Admin)
 router.delete("/vouchers/delete/:voucherId", authorizeAdmin, deleteVoucher);
+
+// Get admin dashboard
+router.get("/admin-stats", authorizeAdmin, getAdminStats);
 
 module.exports = router;
