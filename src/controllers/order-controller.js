@@ -152,20 +152,31 @@ const placeOrder = async (req, res) => {
 };
 
 const getBuyerOrders = async (req, res) => {
-    try {
+  try {
       const buyerId = req.user._id;
-  
+
       const orders = await Order.find({ buyerId })
-        .populate("vouchers.voucherId", "title price") // Populate voucher details
-        .populate("sellerId", "storeName") // Populate seller details
-        .select("vouchers sellerId purchaseDate"); // Select only necessary fields
-  
-      res.json({ orders });
-    } catch (error) {
+          .populate({
+              path: "vouchers.voucherId",
+              select: "title price"
+          }) 
+          .populate("sellerId", "storeName")
+          .select("vouchers sellerId purchaseDate")
+          .lean(); // Convert Mongoose documents to plain objects
+
+      // Ensure vouchers array is defined in each order
+      const safeOrders = orders.map(order => ({
+          ...order,
+          vouchers: order.vouchers || [] // If undefined, set it to an empty array
+      }));
+
+      res.json({ orders: safeOrders });
+  } catch (error) {
       console.error("Error fetching order history:", error);
       res.status(500).json({ message: "Server error", error: error.message });
-    }
-  };
+  }
+};
+
   
 
 
