@@ -35,28 +35,44 @@ const getSellerCustomers = async (req, res) => {
 
 //?✅ Count unique customers who purchased from the seller.
 //?✅ Count total vouchers sold.
-const getSellerSummary = async (req, res) => {
-    try {
-      const sellerId = req.user._id; // Get seller ID from JWT
-  
-      // Fetch all orders for this seller
-      const orders = await Order.find({ sellerId });
-  
-      // Count unique buyers
-      const uniqueBuyers = new Set(orders.map(order => order.buyerId.toString()));
-  
-      // Count total vouchers sold
-      const totalVouchersSold = orders.reduce((sum, order) => sum + order.vouchers.length, 0);
-  
-      res.json({
-        totalCustomers: uniqueBuyers.size,
-        totalVouchersSold
-      });
-    } catch (error) {
-      console.error("Error fetching seller summary:", error);
-      res.status(500).json({ message: "Server error", error: error.message });
-    }
-  };
+// const getSellerSummary = async (req, res) => {
+//   try {
+//       const sellerId = req.user._id; // Get seller ID from JWT
+
+//       // Fetch all orders for this seller
+//       const orders = await Order.find({ sellerId });
+
+//       // Count unique buyers
+//       const uniqueBuyers = new Set(orders.map(order => order.buyerId.toString()));
+
+//       // Count total vouchers sold
+//       const totalVouchersSold = orders.reduce((sum, order) => sum + order.vouchers.length, 0);
+
+//       // Fetch total vouchers listed by the seller
+
+//       const totalVouchers = await Voucher.countDocuments({ sellerId });
+
+//       // Fetch expired vouchers
+//       const expiredVouchers = await Voucher.countDocuments({
+//           sellerId,
+//           expiryDate: { $lt: new Date() },
+//       });
+
+//       // Calculate total revenue from orders
+//       const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+
+//       res.json({
+//           totalCustomers: uniqueBuyers.size,
+//           totalVouchersSold,
+//           totalVouchers, 
+//           expiredVouchers,
+//           totalRevenue
+//       });
+//   } catch (error) {
+//       console.error("Error fetching seller summary:", error);
+//       res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// };
 
 //   const getSellerRevenue = async (req, res) => {
 //     try {
@@ -153,4 +169,4 @@ const getBuyerOrders = async (req, res) => {
   
 
 
-module.exports = { getSellerCustomers,  getSellerSummary,  placeOrder, getBuyerOrders};
+module.exports = { getSellerCustomers,  placeOrder, getBuyerOrders};

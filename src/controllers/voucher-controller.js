@@ -190,8 +190,12 @@ exports.getSellerVoucherStats = async (req, res) => {
       },
     ]);
 
+    // Count unique customers
+    const uniqueCustomers = await Order.distinct("buyerId", { sellerId });
+
     res.json({
       sellerId,
+      totalCustomers: uniqueCustomers.length,  // Added totalCustomers
       totalVouchers,
       expiredVouchers,
       totalVouchersSold: totalVouchersSold.length > 0 ? totalVouchersSold[0].totalSold : 0,

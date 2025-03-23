@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate, authorizeSeller, authorizeBuyer } = require("../middlewares/authentication");
-const { getSellerCustomers,  getSellerSummary, placeOrder, getBuyerOrders } = require("../controllers/order-controller");
+const { getSellerCustomers, placeOrder, getBuyerOrders } = require("../controllers/order-controller");
 
 // 📌 Seller gets list of customers & their vouchers
 router.get("/customers", authenticate, authorizeSeller, getSellerCustomers);
 // 📌 Seller gets order summary
-router.get("/summary", authenticate, authorizeSeller, getSellerSummary);
+// router.get("/summary", authenticate, authorizeSeller, getSellerSummary);
 
 //Seller gets revenue
 //router.get("/revenue", authenticate, authorizeSeller, getSellerRevenue);
