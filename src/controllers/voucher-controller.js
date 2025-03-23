@@ -1,5 +1,6 @@
 const Voucher = require("../models/Voucher");
 const Seller = require("../models/Seller");
+const Order = require("../models/Order");
 const mongoose = require("mongoose");
 
 // Add Voucher (Seller)
@@ -155,9 +156,9 @@ exports.getSellerVoucherStats = async (req, res) => {
       return res.status(401).json({ message: "Unauthorized: Seller ID is missing" });
     }
 
-    const sellerId = req.user.id;
+    const sellerId = new mongoose.Types.ObjectId(req.user.id); // Convert to ObjectId explicitly
 
-    // Fetch total vouchers
+    // Fetch total vouchers listed by the seller
     const totalVouchers = await Voucher.countDocuments({ sellerId });
 
     // Fetch expired vouchers
@@ -166,20 +167,40 @@ exports.getSellerVoucherStats = async (req, res) => {
       expiryDate: { $lt: new Date() },
     });
 
-    // Fetch total vouchers sold
-    const totalVouchersSold = await Voucher.aggregate([
-      { $match: { sellerId } },
-      { $group: { _id: null, totalSold: { $sum: "$unitsSold" } } },
+    // Fetch total vouchers sold from Order collection
+    const totalVouchersSold = await Order.aggregate([
+      { $match: { sellerId } }, // Match orders for this seller
+      { $unwind: "$vouchers" }, // Unwind vouchers array
+      {
+        $group: {
+          _id: null,
+          totalSold: { $sum: 1 }, // Count each voucher sold
+        },
+      },
+    ]);
+
+    // Fetch total revenue
+    const totalRevenue = await Order.aggregate([
+      { $match: { sellerId } }, 
+      { 
+        $group: {
+          _id: null,
+          totalRevenue: { $sum: "$totalAmount" },
+        },
+      },
     ]);
 
     res.json({
+      sellerId,
       totalVouchers,
       expiredVouchers,
       totalVouchersSold: totalVouchersSold.length > 0 ? totalVouchersSold[0].totalSold : 0,
+      totalRevenue: totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0,
     });
+
   } catch (error) {
-    console.error("Error fetching seller voucher stats:", error);
-    res.status(500).json({ message: "Error fetching seller voucher stats", error: error.message });
+    console.error("Error fetching seller stats:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

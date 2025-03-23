@@ -58,22 +58,22 @@ const getSellerSummary = async (req, res) => {
     }
   };
 
-  const getSellerRevenue = async (req, res) => {
-    try {
-        const sellerId = req.user._id; // Get seller ID from JWT
+//   const getSellerRevenue = async (req, res) => {
+//     try {
+//         const sellerId = req.user._id; // Get seller ID from JWT
         
-        // Fetch all orders for this seller
-        const orders = await Order.find({ sellerId });
+//         // Fetch all orders for this seller
+//         const orders = await Order.find({ sellerId });
 
-        // Calculate total revenue using totalAmount field
-        const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+//         // Calculate total revenue using totalAmount field
+//         const totalRevenue = orders.reduce((sum, order) => sum + order.totalAmount, 0);
 
-        res.json({ totalRevenue });
-    } catch (error) {
-        console.error("Error fetching seller revenue:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
+//         res.json({ totalRevenue });
+//     } catch (error) {
+//         console.error("Error fetching seller revenue:", error);
+//         res.status(500).json({ message: "Server error", error: error.message });
+//     }
+// };
 
   
 
@@ -153,4 +153,4 @@ const getBuyerOrders = async (req, res) => {
   
 
 
-module.exports = { getSellerCustomers,  getSellerSummary, getSellerRevenue, placeOrder, getBuyerOrders};
+module.exports = { getSellerCustomers,  getSellerSummary,  placeOrder, getBuyerOrders};

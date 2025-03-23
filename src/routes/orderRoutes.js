@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { authenticate, authorizeSeller, authorizeBuyer } = require("../middlewares/authentication");
-const { getSellerCustomers,  getSellerSummary, getSellerRevenue, placeOrder, getBuyerOrders } = require("../controllers/order-controller");
+const { getSellerCustomers,  getSellerSummary, placeOrder, getBuyerOrders } = require("../controllers/order-controller");
 
 // 📌 Seller gets list of customers & their vouchers
 router.get("/customers", authenticate, authorizeSeller, getSellerCustomers);
@@ -9,7 +9,7 @@ router.get("/customers", authenticate, authorizeSeller, getSellerCustomers);
 router.get("/summary", authenticate, authorizeSeller, getSellerSummary);
 
 //Seller gets revenue
-router.get("/revenue", authenticate, authorizeSeller, getSellerRevenue);
+//router.get("/revenue", authenticate, authorizeSeller, getSellerRevenue);
 
 
 // 📌 Buyer places an order
