@@ -13,18 +13,27 @@ const register = async (req, res) => {
   const { name, email, password, phoneNumber, role, storeName, location, description } = req.body;
 
   try {
-    // Check if email already exists for any role (buyer or seller)
-    const existingUser = await Buyer.findOne({ email }) || await Seller.findOne({ email });
-    
-    if (existingUser) {
-      return res.status(400).json({ message: "Email is already registered." });
+    // Find existing user in both collections
+    const existingBuyer = await Buyer.findOne({ email });
+    const existingSeller = await Seller.findOne({ email });
+
+    // Prevent duplicate role registration
+    if (role === "buyer" && existingBuyer) {
+      return res.status(400).json({ message: "This email is already registered as a buyer." });
+    }
+    if (role === "seller" && existingSeller) {
+      return res.status(400).json({ message: "This email is already registered as a seller." });
     }
 
-    // Hash password
+    // If the user exists as a different role, allow registration
     const hashedPassword = await bcrypt.hash(password, 10);
-
     let user;
-    if (role === "buyer") {
+
+    if (role === "buyer" && existingSeller) {
+      user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
+    } else if (role === "seller" && existingBuyer) {
+      user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
+    } else if (role === "buyer") {
       user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
     } else if (role === "seller") {
       user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
@@ -32,17 +41,16 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
-    // Save the user as "pending" (not verified)
     await user.save();
 
-    // Send email verification link
+    // Send email verification
     const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: "vdqg dlda bkmt amoi",
+        pass: process.env.EMAIL_PASSWORD, // Use environment variable
       },
     });
 
@@ -57,20 +65,17 @@ const register = async (req, res) => {
       `,
     };
 
-    // Send email asynchronously
     await transporter.sendMail(mailOptions);
 
-    // Send the response after email has been sent
     res.status(201).json({ message: "User registered successfully. Please check your email for verification." });
 
   } catch (error) {
-    console.error(error); // Log the error for debugging
+    console.error(error);
     if (!res.headersSent) {
       res.status(500).json({ error: "Server Error", message: error.message });
     }
   }
 };
-
 
 
 // Login function
