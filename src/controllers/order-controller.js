@@ -72,7 +72,7 @@ const getSellerCustomers = async (req, res) => {
 //       console.error("Error fetching seller summary:", error);
 //       res.status(500).json({ message: "Server error", error: error.message });
 //   }
-// };
+// }; 
 
 //   const getSellerRevenue = async (req, res) => {
 //     try {
@@ -158,7 +158,7 @@ const getBuyerOrders = async (req, res) => {
       const orders = await Order.find({ buyerId })
           .populate({
               path: "vouchers.voucherId",
-              select: "title price"
+              select: "title price couponCode"
           }) 
           .populate("sellerId", "storeName")
           .select("vouchers sellerId purchaseDate")
