@@ -268,7 +268,8 @@ const verifyEmail = async (req, res) => {
     // Verify and decode JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const email = decoded.email.toLowerCase(); // Normalize email to lowercase
-
+    
+    console.log(email);
     // Try to find user in both collections
     let user = await Buyer.findOne({ email });
     let model = Buyer;
