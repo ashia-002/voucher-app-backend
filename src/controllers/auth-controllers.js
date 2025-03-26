@@ -297,7 +297,8 @@ const verifyEmail = async (req, res) => {
       { $set: { isVerified: true } },
       { 
         new: true,  // Return the updated document
-        runValidators: true  // Run mongoose validation
+        runValidators: true,
+        useFindAndModify: false, overwrite: true  // Run mongoose validation
       }
     );
 
