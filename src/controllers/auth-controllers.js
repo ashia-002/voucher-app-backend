@@ -261,90 +261,68 @@ const verifyEmail = async (req, res) => {
   const { token } = req.query;
 
   if (!token) {
-    return res.status(400).json({ message: "Verification token is required" });
+    return res.status(400).json({ message: "Token is required" });
   }
 
   try {
-    // Verify and decode JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const email = decoded.email.toLowerCase(); // Normalize email to lowercase
     
-    console.log(email);
-    // Try to find user in both collections
-    let user = await Buyer.findOne({ email });
-    let model = Buyer;
+    console.log('Decoded Token:', decoded);
 
-    if (!user) {
-      user = await Seller.findOne({ email });
-      model = Seller;
+    // Try to find user in both Buyer and Seller models
+    let buyerUser = await Buyer.findOne({ email: decoded.email });
+    let sellerUser = await Seller.findOne({ email: decoded.email });
+
+    if (!buyerUser && !sellerUser) {
+      return res.status(404).json({ message: "User not found in both Buyer and Seller models" });
     }
 
-    if (!user) {
-      return res.status(404).json({ 
-        message: "User not found",
-        suggestion: "Please register first or request a new verification link"
-      });
-    }
-
-    if (user.isVerified) {
-      return res.status(400).json({ 
-        message: "Email already verified",
+    // Check if already verified in both models
+    if ((buyerUser && buyerUser.isVerified) && (sellerUser && sellerUser.isVerified)) {
+      return res.status(200).json({
+        message: "Email already verified in both models",
         suggestion: "You can now login with your credentials"
       });
     }
 
-    // Update verification status
-    const updatedUser = await model.findOneAndUpdate(
-      { email },
-      { $set: { isVerified: true } },
-      { 
-        new: true,
-        runValidators: true,
-        useFindAndModify: false
-      }
-    );
-
-    if (!updatedUser) {
-      return res.status(500).json({ 
-        message: "Verification update failed",
-        error: "Database operation failed"
-      });
+    // Update isVerified in Buyer model if present
+    if (buyerUser && !buyerUser.isVerified) {
+      buyerUser.isVerified = true;
+      await buyerUser.save();
+      console.log('Buyer User Updated:', buyerUser.email, 'Verified:', buyerUser.isVerified);
     }
 
-    // Successful verification response
-    return res.status(200).json({
-      message: "Email verification successful!",
-      isVerified: updatedUser.isVerified,
-      email: updatedUser.email,
-      nextSteps: "You can now login to your account"
+    // Update isVerified in Seller model if present
+    if (sellerUser && !sellerUser.isVerified) {
+      sellerUser.isVerified = true;
+      await sellerUser.save();
+      console.log('Seller User Updated:', sellerUser.email, 'Verified:', sellerUser.isVerified);
+    }
+
+    // Response if both were updated successfully
+    res.status(200).json({
+      message: "Email verified successfully in all applicable models",
+      email: decoded.email
     });
 
   } catch (error) {
-    console.error("Verification Error:", error);
+    console.error('Verification Error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
 
-    // Handle specific JWT errors
-    if (error.name === "TokenExpiredError") {
-      return res.status(401).json({
-        message: "Verification link expired",
-        solution: "Please request a new verification email"
-      });
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: "Verification link has expired" });
     }
-
-    if (error.name === "JsonWebTokenError") {
-      return res.status(401).json({
-        message: "Invalid verification token",
-        solution: "Please check your verification link or request a new one"
-      });
-    }
-
-    // Generic error response
-    res.status(500).json({
-      message: "Email verification failed",
-      error: error.message,
-      solution: "Please contact support or try again later"
+    
+    res.status(400).json({ 
+      message: "Invalid verification token",
+      error: error.message 
     });
   }
 };
+
 
 
 // Password reset request
