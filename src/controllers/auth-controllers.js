@@ -261,81 +261,86 @@ const verifyEmail = async (req, res) => {
   const { token } = req.query;
 
   if (!token) {
-    return res.status(400).json({ message: "Token is required" });
+    return res.status(400).json({ message: "Verification token is required" });
   }
 
   try {
+    // Verify and decode JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
-    // Detailed logging of decoded token
-    console.log('Decoded Token:', decoded);
+    const email = decoded.email.toLowerCase(); // Normalize email to lowercase
 
-    // Try to find user in both Buyer and Seller models
-    let user = await Buyer.findOne({ email: decoded.email });
+    // Try to find user in both collections
+    let user = await Buyer.findOne({ email });
     let model = Buyer;
 
-    // If not found in Buyer, try Seller
     if (!user) {
-      user = await Seller.findOne({ email: decoded.email });
+      user = await Seller.findOne({ email });
       model = Seller;
     }
 
-    // Comprehensive logging
-    console.log('Found User:', user ? {
-      email: user.email,
-      currentVerificationStatus: user.isVerified,
-      userId: user._id
-    } : 'No user found');
-
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Explicit update using findOneAndUpdate
-    const updatedUser = await model.findOneAndUpdate(
-      { email: decoded.email }, 
-      { $set: { isVerified: true } },
-      { 
-        new: true,  // Return the updated document
-        runValidators: true,
-        useFindAndModify: false, overwrite: true  // Run mongoose validation
-      }
-    );
-
-    // Log the update result
-    console.log('Updated User:', updatedUser ? {
-      email: updatedUser.email,
-      newVerificationStatus: updatedUser.isVerified,
-      userId: updatedUser._id
-    } : 'Update failed');
-
-    if (!updatedUser) {
-      return res.status(500).json({ 
-        message: "Failed to update verification status" 
+      return res.status(404).json({ 
+        message: "User not found",
+        suggestion: "Please register first or request a new verification link"
       });
     }
 
-    res.status(200).json({ 
-      message: "Email verified successfully",
-      isVerified: true,
-      email: updatedUser.email
+    if (user.isVerified) {
+      return res.status(400).json({ 
+        message: "Email already verified",
+        suggestion: "You can now login with your credentials"
+      });
+    }
+
+    // Update verification status
+    const updatedUser = await model.findOneAndUpdate(
+      { email },
+      { $set: { isVerified: true } },
+      { 
+        new: true,
+        runValidators: true,
+        useFindAndModify: false
+      }
+    );
+
+    if (!updatedUser) {
+      return res.status(500).json({ 
+        message: "Verification update failed",
+        error: "Database operation failed"
+      });
+    }
+
+    // Successful verification response
+    return res.status(200).json({
+      message: "Email verification successful!",
+      isVerified: updatedUser.isVerified,
+      email: updatedUser.email,
+      nextSteps: "You can now login to your account"
     });
 
   } catch (error) {
-    // Comprehensive error logging
-    console.error('Verification Error:', {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error("Verification Error:", error);
 
-    if (error.name === 'TokenExpiredError') {
-      return res.status(400).json({ message: "Verification link has expired" });
+    // Handle specific JWT errors
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        message: "Verification link expired",
+        solution: "Please request a new verification email"
+      });
     }
-    
-    res.status(400).json({ 
-      message: "Invalid verification token",
-      error: error.message 
+
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        message: "Invalid verification token",
+        solution: "Please check your verification link or request a new one"
+      });
+    }
+
+    // Generic error response
+    res.status(500).json({
+      message: "Email verification failed",
+      error: error.message,
+      solution: "Please contact support or try again later"
     });
   }
 };
