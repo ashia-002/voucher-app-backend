@@ -122,7 +122,7 @@ const register = async (req, res) => {
       html: `
         <h1>Welcome to Our Platform!</h1>
         <p>Please verify your email address by clicking the link below:</p>
-        <a href="http://localhost:3000/api/auth/verify-email?token=${token}">Verify Email</a>`
+        <a href="https://voucher-app-backend.vercel.app/api/auth/verify-email?token=${token}">Verify Email</a>`
       ,
     };
 
@@ -266,23 +266,76 @@ const verifyEmail = async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    let user = await Buyer.findOne({ email: decoded.email });
+    
+    // Detailed logging of decoded token
+    console.log('Decoded Token:', decoded);
 
+    // Try to find user in both Buyer and Seller models
+    let user = await Buyer.findOne({ email: decoded.email });
+    let model = Buyer;
+
+    // If not found in Buyer, try Seller
     if (!user) {
       user = await Seller.findOne({ email: decoded.email });
+      model = Seller;
     }
+
+    // Comprehensive logging
+    console.log('Found User:', user ? {
+      email: user.email,
+      currentVerificationStatus: user.isVerified,
+      userId: user._id
+    } : 'No user found');
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.isVerified = true;
-    await user.save();
+    // Explicit update using findOneAndUpdate
+    const updatedUser = await model.findOneAndUpdate(
+      { email: decoded.email }, 
+      { $set: { isVerified: true } },
+      { 
+        new: true,  // Return the updated document
+        runValidators: true  // Run mongoose validation
+      }
+    );
 
-    res.status(200).json({ message: "Email verified successfully" });
+    // Log the update result
+    console.log('Updated User:', updatedUser ? {
+      email: updatedUser.email,
+      newVerificationStatus: updatedUser.isVerified,
+      userId: updatedUser._id
+    } : 'Update failed');
+
+    if (!updatedUser) {
+      return res.status(500).json({ 
+        message: "Failed to update verification status" 
+      });
+    }
+
+    res.status(200).json({ 
+      message: "Email verified successfully",
+      isVerified: true,
+      email: updatedUser.email
+    });
 
   } catch (error) {
-    res.status(400).json({ message: "Invalid or expired token" });
+    // Comprehensive error logging
+    console.error('Verification Error:', {
+      name: error.name,
+      message: error.message,
+      stack: error.stack
+    });
+
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: "Verification link has expired" });
+    }
+    
+    res.status(400).json({ 
+      message: "Invalid verification token",
+      error: error.message 
+    });
   }
 };
 
