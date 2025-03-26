@@ -158,7 +158,7 @@ const getBuyerOrders = async (req, res) => {
       const orders = await Order.find({ buyerId })
           .populate({
               path: "vouchers.voucherId",
-              select: "title price couponCode"
+              select: "title price couponCode" // Include couponCode
           }) 
           .populate("sellerId", "storeName")
           .select("vouchers sellerId purchaseDate")
@@ -167,7 +167,13 @@ const getBuyerOrders = async (req, res) => {
       // Ensure vouchers array is defined in each order
       const safeOrders = orders.map(order => ({
           ...order,
-          vouchers: order.vouchers || [] // If undefined, set it to an empty array
+          vouchers: order.vouchers?.map(v => ({
+              ...v,
+              voucherId: v.voucherId ? {
+                  ...v.voucherId,
+                  couponCode: v.voucherId.couponCode || null // Ensure couponCode exists
+              } : null
+          })) || [] // If undefined, set it to an empty array
       }));
 
       res.json({ orders: safeOrders });
@@ -176,8 +182,5 @@ const getBuyerOrders = async (req, res) => {
       res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
-  
-
 
 module.exports = { getSellerCustomers,  placeOrder, getBuyerOrders};
