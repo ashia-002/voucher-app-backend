@@ -11,14 +11,17 @@ const VoucherSchema = new mongoose.Schema(
     expiryDate: { type: Date, required: true },
     priceOptions: [
       {
-        actualPrice: Number,  // Store as Number
-        salePrice: Number,    // Store as Number
+        actualPrice: Number,  
+        salePrice: Number,    
         title: String,
       }
     ],
-    conversionRate: Number,
     unitsSold: { type: Number, default: 0 },
     revenue: { type: Number, default: 0 },
+
+    // ✅ Coupon Code Field
+    couponCode: { type: String, required: true, unique: true }, 
+    
   },
   { toJSON: { virtuals: true } }
 );
@@ -34,12 +37,11 @@ VoucherSchema.virtual("voucherStatus").get(function () {
   return this.daysRemaining > 0 ? "Active" : "Expired";
 });
 
-// Format price for display (Optional)
 VoucherSchema.virtual("formattedPriceOptions").get(function () {
   return this.priceOptions.map(option => ({
     ...option,
-    actualPrice: `$${option.actualPrice.toFixed(2)}`, // Convert to string with 2 decimals
-    salePrice: `$${option.salePrice.toFixed(2)}`,   // Convert to string with 2 decimals
+    actualPrice: `$${option.actualPrice.toFixed(2)}`,
+    salePrice: `$${option.salePrice.toFixed(2)}`,
   }));
 });
 

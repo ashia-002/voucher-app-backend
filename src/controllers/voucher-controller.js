@@ -6,7 +6,7 @@ const mongoose = require("mongoose");
 // Add Voucher (Seller)
 exports.addVoucher = async (req, res) => {
   try {
-    const { category, title, description, expiryDate, priceOptions, conversionRate } = req.body;
+    const { category, title, description, expiryDate, priceOptions, couponCode } = req.body;
 
     if (!req.user || !req.user.id) {
       return res.status(401).json({ message: "Unauthorized: Seller ID is missing" });
@@ -19,17 +19,23 @@ exports.addVoucher = async (req, res) => {
       return res.status(404).json({ message: "Seller not found" });
     }
 
-    // ✅ Create a new voucher with the store details from Seller model
+    // ✅ Check if coupon code already exists (to avoid duplicates)
+    const existingVoucher = await Voucher.findOne({ couponCode });
+    if (existingVoucher) {
+      return res.status(400).json({ message: "Coupon code already exists. Please choose another." });
+    }
+
+    // ✅ Create a new voucher without conversionRate
     const voucher = new Voucher({
       sellerId: req.user.id,
-      storeName: seller.storeName, // Automatically fetched from Seller model
-      location: seller.location,   // Automatically fetched from Seller model
+      storeName: seller.storeName, 
+      location: seller.location,   
       category,
       title,
       description,
-      expiryDate: new Date(expiryDate), // Ensure proper Date format
+      expiryDate: new Date(expiryDate),
       priceOptions,
-      conversionRate,
+      couponCode,  // ✅ Store the provided coupon code
     });
 
     await voucher.save();
@@ -44,6 +50,7 @@ exports.addVoucher = async (req, res) => {
     res.status(500).json({ message: "Error adding voucher", error: error.message });
   }
 };
+
 
 
 // Get All Active Vouchers (For Buyers)
