@@ -9,31 +9,91 @@ const crypto = require("crypto");
 require("dotenv").config();
 
 // Register a new user (Buyer or Seller)
+// const register = async (req, res) => {
+//   const { name, email, password, phoneNumber, role, storeName, location, description } = req.body;
+
+//   try {
+//     // Find existing user in both collections
+//     const existingBuyer = await Buyer.findOne({ email });
+//     const existingSeller = await Seller.findOne({ email });
+
+//     // Prevent duplicate role registration
+//     if (role === "buyer" && existingBuyer) {
+//       return res.status(400).json({ message: "This email is already registered as a buyer." });
+//     }
+//     if (role === "seller" && existingSeller) {
+//       return res.status(400).json({ message: "This email is already registered as a seller." });
+//     }
+
+//     // If the user exists as a different role, allow registration
+//     const hashedPassword = await bcrypt.hash(password, 10);
+//     let user;
+
+//     if (role === "buyer" && existingSeller) {
+//       user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
+//     } else if (role === "seller" && existingBuyer) {
+//       user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
+//     } else if (role === "buyer") {
+//       user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
+//     } else if (role === "seller") {
+//       user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
+//     } else {
+//       return res.status(400).json({ message: "Invalid role" });
+//     }
+
+//     await user.save();
+
+//     // Send email verification
+//     const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
+
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: "vdqg dlda bkmt amoi", // Use environment variable
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: process.env.EMAIL,
+//       to: user.email,
+//       subject: "Email Verification",
+//       html: `
+//         <h1>Welcome to Our Platform!</h1>
+//         <p>Please verify your email address by clicking the link below:</p>
+//         <a href="http://localhost:3000/api/auth/verify-email?token=${token}">Verify Email</a>
+//       `,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     res.status(201).json({ message: "User registered successfully. Please check your email for verification." });
+
+//   } catch (error) {
+//     console.error(error);
+//     if (!res.headersSent) {
+//       res.status(500).json({ error: "Server Error", message: error.message });
+//     }
+//   }
+// };
+
 const register = async (req, res) => {
   const { name, email, password, phoneNumber, role, storeName, location, description } = req.body;
 
   try {
-    // Find existing user in both collections
-    const existingBuyer = await Buyer.findOne({ email });
-    const existingSeller = await Seller.findOne({ email });
-
-    // Prevent duplicate role registration
-    if (role === "buyer" && existingBuyer) {
-      return res.status(400).json({ message: "This email is already registered as a buyer." });
-    }
-    if (role === "seller" && existingSeller) {
-      return res.status(400).json({ message: "This email is already registered as a seller." });
+    // Check if email already exists for any role (buyer or seller)
+    const existingUserB = await Buyer.findOne({ email })
+    const existingUserS = await Seller.findOne({ email });
+    
+    if (existingUserB && existingUserS) {
+      return res.status(400).json({ message: "Email is already registered." });
     }
 
-    // If the user exists as a different role, allow registration
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
-    let user;
 
-    if (role === "buyer" && existingSeller) {
-      user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
-    } else if (role === "seller" && existingBuyer) {
-      user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
-    } else if (role === "buyer") {
+    let user;
+    if (role === "buyer") {
       user = new Buyer({ name, email, password: hashedPassword, phoneNumber, isVerified: false });
     } else if (role === "seller") {
       user = new Seller({ name, email, password: hashedPassword, storeName, location, description, isVerified: false });
@@ -41,16 +101,17 @@ const register = async (req, res) => {
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    // Save the user as "pending" (not verified)
     await user.save();
 
-    // Send email verification
+    // Send email verification link
     const token = jwt.sign({ email: user.email }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: "vdqg dlda bkmt amoi", // Use environment variable
+        pass: "vdqg dlda bkmt amoi",
       },
     });
 
@@ -61,22 +122,23 @@ const register = async (req, res) => {
       html: `
         <h1>Welcome to Our Platform!</h1>
         <p>Please verify your email address by clicking the link below:</p>
-        <a href="https://voucher-app-backend.vercel.app/api/auth/verify-email?token=${token}">Verify Email</a>
-      `,
+        <a href="http://localhost:3000/api/auth/verify-email?token=${token}">Verify Email</a>`
+      ,
     };
 
+    // Send email asynchronously
     await transporter.sendMail(mailOptions);
 
+    // Send the response after email has been sent
     res.status(201).json({ message: "User registered successfully. Please check your email for verification." });
 
   } catch (error) {
-    console.error(error);
+    console.error(error); // Log the error for debugging
     if (!res.headersSent) {
       res.status(500).json({ error: "Server Error", message: error.message });
     }
   }
 };
-
 
 // Login function
 const login = async (req, res) => {
@@ -223,6 +285,7 @@ const verifyEmail = async (req, res) => {
     res.status(400).json({ message: "Invalid or expired token" });
   }
 };
+
 
 // Password reset request
 const requestPasswordReset = async (req, res) => {

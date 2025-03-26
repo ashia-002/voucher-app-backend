@@ -1,29 +1,42 @@
 const Order = require("../models/Order");
 const Voucher = require("../models/Voucher");
+const mongoose = require("mongoose");
 
 
 const getSellerCustomers = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.status(400).json({ message: "User not authenticated" });
+    }
+    
     const sellerId = req.user._id; // Get seller's ID from JWT
+   
+
+    // Ensure sellerId is an ObjectId for the query
+    const sellerObjectId = new mongoose.Types.ObjectId(sellerId);
 
     // Find all orders for this seller
-    const orders = await Order.find({ sellerId }).populate("buyerId", "name email");
+    const orders = await Order.find({ sellerId: sellerObjectId }).populate("buyerId", "name email");
 
     // Group by buyer
     const customers = {};
 
     orders.forEach(order => {
       const buyer = order.buyerId;
-      if (!customers[buyer._id]) {
-        customers[buyer._id] = {
-          name: buyer.name,
-          email: buyer.email,
-          totalBought: 0,
-          vouchers: []
-        };
+
+      // Check if buyerId exists before proceeding
+      if (buyer) {
+        if (!customers[buyer._id]) {
+          customers[buyer._id] = {
+            name: buyer.name,
+            email: buyer.email,
+            totalBought: 0,
+            vouchers: []
+          };
+        }
+        customers[buyer._id].totalBought += order.vouchers.length;
+        customers[buyer._id].vouchers.push(...order.vouchers);
       }
-      customers[buyer._id].totalBought += order.vouchers.length;
-      customers[buyer._id].vouchers.push(...order.vouchers);
     });
 
     res.json(Object.values(customers));
@@ -32,6 +45,7 @@ const getSellerCustomers = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 //?✅ Count unique customers who purchased from the seller.
 //?✅ Count total vouchers sold.
