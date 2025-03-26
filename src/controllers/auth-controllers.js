@@ -50,7 +50,7 @@ const register = async (req, res) => {
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD, // Use environment variable
+        pass: "vdqg dlda bkmt amoi", // Use environment variable
       },
     });
 
@@ -238,7 +238,7 @@ const requestPasswordReset = async (req, res) => {
     const resetToken = crypto.randomBytes(32).toString("hex");
     const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
     user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // Token expires in 1 hour
+    user.resetPasswordExpires = Date.now() + 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
     await user.save();
 
