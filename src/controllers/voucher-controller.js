@@ -51,8 +51,6 @@ exports.addVoucher = async (req, res) => {
   }
 };
 
-
-
 // Get All Active Vouchers (For Buyers)
 exports.getAllActiveVouchers = async (req, res) => {
   try {
