@@ -7,6 +7,7 @@ const cartRoutes = require('./src/routes/cartRoutes');
 const orderRoutes = require('./src/routes/orderRoutes');
 const profileRoutes = require('./src/routes/profileRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
+const subscriptionRoutes = require('./src/routes/subscriptionRoutes');
 require('dotenv').config();
 const mongoose = require('mongoose');
 
@@ -60,6 +61,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/subscription/", subscriptionRoutes);
 
 //global error handler
 app.use((err, req, res, next)=> {

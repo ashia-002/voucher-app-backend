@@ -2,6 +2,7 @@ const Voucher = require("../models/Voucher");
 const Seller = require("../models/Seller");
 const Order = require("../models/Order");
 const mongoose = require("mongoose");
+const { notifyBuyersOnNewVoucher } = require("./notification");
 
 // Add Voucher (Seller)
 exports.addVoucher = async (req, res) => {
@@ -17,6 +18,12 @@ exports.addVoucher = async (req, res) => {
 
     if (!seller) {
       return res.status(404).json({ message: "Seller not found" });
+    }
+
+    // 🔹 Check if seller has reached their voucher limit
+    const sellerVouchers = await Voucher.countDocuments({ sellerId: req.user.id });
+    if (sellerVouchers >= seller.subscription.voucherLimit) {
+      return res.status(400).json({ message: "Voucher limit reached for this month. Upgrade your plan!" });
     }
 
     // ✅ Check if coupon code already exists (to avoid duplicates)
@@ -39,6 +46,8 @@ exports.addVoucher = async (req, res) => {
     });
 
     await voucher.save();
+
+    await notifyBuyersOnNewVoucher(title, seller.storeName);
 
     res.status(201).json({
       message: "Voucher added successfully",

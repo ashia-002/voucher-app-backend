@@ -25,6 +25,7 @@ const BuyerSchema = new mongoose.Schema({
     type: Boolean,
     default: false, // Set default to false to indicate not verified
   },
+  fcmToken: { type: String },
 });
 
 module.exports = mongoose.model("Buyer", BuyerSchema);

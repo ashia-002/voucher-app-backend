@@ -142,7 +142,7 @@ const register = async (req, res) => {
 
 // Login function
 const login = async (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password, role, fmcToken } = req.body;
 
   try {
     let user;
@@ -165,6 +165,12 @@ const login = async (req, res) => {
 
     if (!user.isVerified) {
       return res.status(400).json({ message: "Please verify your email first" });
+    }
+
+    // ✅ Save FCM token to user
+    if (fmcToken) {
+      user.fcmToken = fmcToken;
+      await user.save();
     }
 
     const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, { expiresIn: "1d" });

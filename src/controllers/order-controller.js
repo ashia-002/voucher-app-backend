@@ -1,6 +1,8 @@
+const Buyer = require("../models/Buyer");
 const Order = require("../models/Order");
 const Voucher = require("../models/Voucher");
 const mongoose = require("mongoose");
+const { notifySellerOnVoucherPurchase } = require("./notification");
 
 
 const getSellerCustomers = async (req, res) => {
@@ -157,6 +159,12 @@ const placeOrder = async (req, res) => {
     });
 
     await newOrder.save();
+
+    const buyer = await Buyer.findById(buyerId);
+    const buyerName = buyer ? buyer.name : "A buyer";
+
+    await notifySellerOnVoucherPurchase(sellerId, updatedVouchers.map(v => v.voucherId).join(", "), buyerName);
+    
     res.status(201).json({ message: "Order placed successfully", order: newOrder });
 
   } catch (error) {
