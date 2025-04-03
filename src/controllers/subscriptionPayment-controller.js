@@ -4,34 +4,41 @@ const SUBSCRIPTION_PLAN = require("../config/subscriptionPlan");
 const { sendNotification } = require("./notification");
 
 const processSubscriptionPayment = async (req, res) => {
-    try {
+  try {
       const { sellerId, plan } = req.body;
-  
+
       // Validate seller
       const seller = await Seller.findById(sellerId);
-      if (!seller) return res.status(404).json({ message: "Seller not found" });
-  
+      if (!seller) {
+          return res.status(404).json({ success: false, message: "Seller not found" });
+      }
+
       // Validate plan
       if (!SUBSCRIPTION_PLAN[plan]) {
-        return res.status(400).json({ message: "Invalid subscription plan" });
+          return res.status(400).json({ success: false, message: "Invalid subscription plan" });
       }
-  
+
       const planDetails = SUBSCRIPTION_PLAN[plan];
-  
-      // 🔹 Create Stripe PaymentIntent (Admin receives the money)
+
+      // 🔹 Create Stripe PaymentIntent
       const paymentIntent = await stripe.paymentIntents.create({
-        amount: planDetails.price * 100, // Stripe requires amount in cents
-        currency: "gbp", // Pounds (£)
-        metadata: { sellerId, plan },
+          amount: planDetails.price * 100, // Convert to cents
+          currency: "gbp",
+          metadata: { sellerId, plan },
       });
-  
-      res.json({ clientSecret: paymentIntent.client_secret });
-  
-    } catch (error) {
-      console.error("Payment Error:", error);
-      res.status(500).json({ message: "Payment processing failed", error: error.message });
-    }
-  };
+
+      res.json({ success: true, clientSecret: paymentIntent.client_secret });
+
+  } catch (error) {
+      console.error("❌ Payment Error:", error);
+      res.status(500).json({ 
+          success: false, 
+          message: "Payment processing failed", 
+          error: error.message 
+      });
+  }
+};
+
 
 const handlePaymentSuccess = async (req, res) => {
     try {
