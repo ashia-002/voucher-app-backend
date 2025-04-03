@@ -3,7 +3,7 @@ const Seller = require("../models/Seller");
 const SUBSCRIPTION_PLAN = require("../config/subscriptionPlan");
 const { sendNotification } = require("./notification");
 
-exports.processSubscriptionPayment = async (req, res) => {
+const processSubscriptionPayment = async (req, res) => {
     try {
       const { sellerId, plan } = req.body;
   
@@ -33,7 +33,7 @@ exports.processSubscriptionPayment = async (req, res) => {
     }
   };
 
-exports.handlePaymentSuccess = async (req, res) => {
+const handlePaymentSuccess = async (req, res) => {
     try {
         const {sellerId, plan} = req.body;
         const planDetails = SUBSCRIPTION_PLAN[plan];
@@ -46,6 +46,13 @@ exports.handlePaymentSuccess = async (req, res) => {
         }, {new: true});
 
         if(!seller) return res.status(404).json({message: "Seller not found"});
+
+        // // 🔹 Notify Admin
+        // await sendNotification(
+        //   process.env.ADMIN_FCM_TOKEN,
+        //   "New Subscription!",
+        //   `${seller.name} subscribed to the ${plan} plan (£${planDetails.price})`
+        // );
 
         //Notify Seller
         await sendNotification(
@@ -60,4 +67,6 @@ exports.handlePaymentSuccess = async (req, res) => {
         res.status(500).json({ message: "Subscription activation failed", error: error.message });
     }
 }
+
+module.exports = {processSubscriptionPayment, handlePaymentSuccess};
   

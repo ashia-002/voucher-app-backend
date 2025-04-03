@@ -3,3 +3,4 @@ node_modules/
 .env
 ignore.txt
 firebase-service-account.json
+reword-3-firebase-adminsdk-fbsvc-7358802272.json
