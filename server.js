@@ -61,7 +61,7 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/order", orderRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/subscription/", subscriptionRoutes);
+app.use("/api/subscription", subscriptionRoutes);
 
 //global error handler
 app.use((err, req, res, next)=> {
