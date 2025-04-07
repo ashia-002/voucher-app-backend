@@ -105,6 +105,30 @@ const getAdminCustomers = async (req, res) => {
     }
   };
 
+  const deleteSeller = async (req, res) => {
+    try {
+      const { sellerId } = req.params;
+  
+      // Check if seller exists
+      const seller = await Seller.findById(sellerId);
+      if (!seller) {
+        return res.status(404).json({ message: "Seller not found" });
+      }
+  
+      // Optional: Delete associated vouchers & orders
+      await Voucher.deleteMany({ sellerId });
+      await Order.deleteMany({ sellerId });
+  
+      // Delete the seller
+      await Seller.findByIdAndDelete(sellerId);
+  
+      res.json({ success: true, message: "Seller deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting seller:", error);
+      res.status(500).json({ success: false, message: "Server error", error: error.message });
+    }
+  };
+
   // Add Voucher (Admin)
   const addVoucher = async (req, res) => {
     try {
@@ -275,4 +299,4 @@ const getAdminCustomers = async (req, res) => {
   };
   
   
-module.exports = {login, getAdminCustomers, getAdminSellers, addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats};
+module.exports = {login, getAdminCustomers, getAdminSellers, deleteSeller,addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats};
