@@ -11,6 +11,8 @@ const BuyerSchema = new mongoose.Schema({
     contentType: { type: String, default: "image/png" }, 
     default: { data: Buffer.alloc(0) } 
   }, // Stores profile image as Buffer
+  firebaseUID: { type: String, sparse: true, index: true },
+  profilePicture: { type: String, default: "" }, // URL from Firebase
   createdAt: { type: Date, default: Date.now }, // Timestamp when user is created
   purchasedVouchers: [
     {

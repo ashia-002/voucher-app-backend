@@ -401,4 +401,82 @@ const resetPassword = async (req, res) => {
   }
 };
 
-module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, requestPasswordReset, resetPassword };
+const firebaseAuth = async (req, res) => {
+  try {
+    const { idToken, role = "buyer", fcmToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({ message: "ID token is required" });
+    }
+
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid, email, name, picture } = decodedToken;
+
+    let user;
+    if (role === "buyer") {
+      user = await Buyer.findOne({ email });
+    } else if (role === "seller") {
+      user = await Seller.findOne({ email });
+    } else {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    if (!user) {
+      const randomPassword = crypto.randomBytes(16).toString('hex');
+      if (role === "buyer") {
+        user = new Buyer({
+          name: name || "User",
+          email,
+          password: randomPassword,
+          phoneNumber: decodedToken.phone_number || "",
+          firebaseUID: uid,
+          profilePicture: picture || "",
+          isVerified: true
+        });
+      } else {
+        user = new Seller({
+          name: name || "User",
+          email,
+          password: randomPassword,
+          storeName: name || "Store",
+          location: "",
+          description: "",
+          firebaseUID: uid,
+          profilePicture: picture || "",
+          isVerified: true
+        });
+      }
+      await user.save();
+    } else {
+      if (!user.firebaseUID) {
+        user.firebaseUID = uid;
+        user.profilePicture = picture || user.profilePicture;
+        await user.save();
+      }
+    }
+
+    if (fcmToken) {
+      user.fcmToken = fcmToken;
+      await user.save();
+    }
+
+    const token = jwt.sign({ id: user._id, role }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    return res.status(200).json({
+      success: true,
+      message: "Authentication successful",
+      token,
+      user,
+    });
+  } catch (error) {
+    console.error("Firebase Auth Error:", error);
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed",
+      error: error.message,
+    });
+  }
+};
+
+
+module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, requestPasswordReset, resetPassword, firebaseAuth };

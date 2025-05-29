@@ -71,4 +71,30 @@ const authorizeAdmin = async (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, authorizeSeller, authorizeBuyer, authorizeAdmin };
+const firebaseAuthMiddleware = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "No token provided" });
+    }
+
+    const idToken = authHeader.split(" ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { uid } = decodedToken;
+
+    const user = await Buyer.findOne({ firebaseUID: uid }) || await Seller.findOne({ firebaseUID: uid });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    console.error("Middleware Firebase Auth Error:", error);
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+
+module.exports = { authenticate, authorizeSeller, authorizeBuyer, authorizeAdmin, firebaseAuthMiddleware };

@@ -10,6 +10,8 @@ const SellerSchema = new mongoose.Schema({
     contentType: { type: String, default: "image/png" }, 
     default: { data: Buffer.alloc(0) } 
   },
+  firebaseUID: { type: String, sparse: true, index: true },
+  profilePicture: { type: String, default: "" }, // URL from Firebase
   storeName: { type: String, required: true },
   location: { type: String, required: true },
   description: { type: String, default: "" },
