@@ -476,21 +476,27 @@ const requestPasswordReset = async (req, res) => {
 // };
 
 // Reset password
+
 const resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { newPassword } = req.body;
+  const token = req.query.token; // get token from query
+
+  if (!token) {
+    return res.status(400).json({ message: "Missing token" });
+  }
 
   try {
     const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
     let user = await Buyer.findOne({ resetPasswordToken }) || await Seller.findOne({ resetPasswordToken });
 
-    if (!user || user.resetPasswordExpires < Date.now()) {
+    if (!user || user.resetPasswordTokenExpiration < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
+    user.resetPasswordTokenExpiration = undefined;
 
     await user.save();
 
@@ -500,6 +506,7 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 };
+
 
 const firebaseAuth = async (req, res) => {
   try {
