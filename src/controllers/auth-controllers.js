@@ -478,12 +478,7 @@ const requestPasswordReset = async (req, res) => {
 // Reset password
 
 const resetPassword = async (req, res) => {
-  const { newPassword } = req.body;
-  const token = req.query.token; // get token from query
-
-  if (!token) {
-    return res.status(400).json({ message: "Missing token" });
-  }
+  const { token, newPassword } = req.body;
 
   try {
     const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
@@ -506,7 +501,6 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 };
-
 
 const firebaseAuth = async (req, res) => {
   try {
