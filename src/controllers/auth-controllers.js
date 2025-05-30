@@ -1,3 +1,4 @@
+const admin = require("../config/firebase");
 const Buyer = require("../models/Buyer");
 const Seller = require("../models/Seller");
 const bcrypt = require("bcryptjs");
