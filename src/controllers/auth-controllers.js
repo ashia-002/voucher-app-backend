@@ -527,11 +527,20 @@ const requestPasswordReset = async (req, res) => {
 // Reset password
 
 const resetPassword = async (req, res) => {
-  const { code, newPassword } = req.body;
+  const { code, newPassword, role } = req.body;
+
+  if (!["buyer", "seller"].includes(role)) {
+    return res.status(400).json({ message: "Invalid role specified" });
+  }
 
   try {
+    let user;
 
-    let user = await Buyer.findOne({ resetPasswordToken: code }) || await Seller.findOne({ resetPasswordToken: code });
+    if (role === "buyer") {
+      user = await Buyer.findOne({ resetPasswordToken: code });
+    } else if (role === "seller") {
+      user = await Seller.findOne({ resetPasswordToken: code });
+    }
 
     if (!user || user.resetPasswordTokenExpiration < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset token" });
@@ -550,6 +559,7 @@ const resetPassword = async (req, res) => {
     res.status(500).json({ error: "Server Error" });
   }
 };
+
 
 const firebaseAuth = async (req, res) => {
   try {
