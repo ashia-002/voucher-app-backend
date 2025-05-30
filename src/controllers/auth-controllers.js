@@ -333,6 +333,54 @@ const verifyEmail = async (req, res) => {
 
 
 // Password reset request
+// const requestPasswordReset = async (req, res) => {
+//   const { email } = req.body;
+
+//   try {
+//     let user = await Buyer.findOne({ email }) || await Seller.findOne({ email });
+
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     const resetToken = crypto.randomBytes(32).toString("hex");
+//     const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+//     user.resetPasswordToken = resetPasswordToken;
+//     user.resetPasswordExpires = Date.now() + 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+
+//     await user.save();
+
+//     const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password?token=${resetToken}`;
+
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: "vdqg dlda bkmt amoi",
+//       },
+//     });
+
+//     const mailOptions = {
+//       from: process.env.EMAIL,
+//       to: user.email,
+//       subject: "Password Reset Request",
+//       html: `
+//         <p>You requested to reset your password.</p>
+//         <p>Click the link below to reset it:</p>
+//         <a href=${resetLink}>Reset Password</a>
+//         <p>If you didn't request this, please ignore this email.</p>
+//       `,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     res.status(200).json({ message: "Password reset link sent to your email" });
+
+//   } catch (error) {
+//     res.status(500).json({ error: "Server Error" });
+//   }
+// };
+
 const requestPasswordReset = async (req, res) => {
   const { email } = req.body;
 
@@ -343,43 +391,44 @@ const requestPasswordReset = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-    user.resetPasswordToken = resetPasswordToken;
-    user.resetPasswordExpires = Date.now() + 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+    // Generate 5-digit numeric code
+    const resetCode = Math.floor(10000 + Math.random() * 90000).toString(); // always 5 digits
+    user.resetPasswordToken = resetCode;
+    user.resetPasswordTokenExpiration = Date.now() + 6 * 60 * 60 * 1000; // 6 hours
 
     await user.save();
-
-    const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password?token=${resetToken}`;
 
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL,
-        pass: "vdqg dlda bkmt amoi",
+        pass: "vdqg dlda bkmt amoi", // NOTE: Use environment variable instead in production!
       },
     });
 
     const mailOptions = {
       from: process.env.EMAIL,
       to: user.email,
-      subject: "Password Reset Request",
+      subject: "Your Password Reset Code",
       html: `
         <p>You requested to reset your password.</p>
-        <p>Click the link below to reset it:</p>
-        <a href=${resetLink}>Reset Password</a>
+        <p>Your 5-digit password reset code is:</p>
+        <h2>${resetCode}</h2>
+        <p>This code is valid for 6 hours.</p>
         <p>If you didn't request this, please ignore this email.</p>
       `,
     };
 
     await transporter.sendMail(mailOptions);
 
-    res.status(200).json({ message: "Password reset link sent to your email" });
+    res.status(200).json({ message: "Password reset code sent to your email" });
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server Error" });
   }
 };
+
 
 // const forgotPassword = async (req, res) => {
 //   const { email, role } = req.body;
@@ -478,11 +527,11 @@ const requestPasswordReset = async (req, res) => {
 // Reset password
 
 const resetPassword = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { code, newPassword } = req.body;
 
   try {
-    const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
-    let user = await Buyer.findOne({ resetPasswordToken }) || await Seller.findOne({ resetPasswordToken });
+
+    let user = await Buyer.findOne({ resetPasswordToken: code }) || await Seller.findOne({ resetPasswordToken: code });
 
     if (!user || user.resetPasswordTokenExpiration < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired reset token" });
