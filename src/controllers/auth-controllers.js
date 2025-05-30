@@ -437,7 +437,7 @@ const forgotPassword = async (req, res) => {
     if (!user.isVerified) return res.status(400).json({ message: "Email not verified" });
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = token;
+    user.resetPasswordToken = resetToken;
     user.resetPasswordTokenExpiration = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save();
 
@@ -449,6 +449,8 @@ const forgotPassword = async (req, res) => {
       },
     });
 
+    const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password/${resetToken}?role=${role}`;
+
     const mailOptions = {
       from: process.env.EMAIL,
       to: email,
@@ -456,7 +458,7 @@ const forgotPassword = async (req, res) => {
       html: `
         <p>You requested to reset your password.</p>
         <p>Click the link below to reset it:</p>
-        <a href="yourapp://reset-password/${resetToken}?role=${role}">Reset Password</a>
+        <a href=${resetLink}>Reset Password</a>
         <p>If you didn't request this, please ignore this email.</p>
       `,
     };
