@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, googleLogin, googleCallback, logout,  verifyEmail, requestPasswordReset, resetPassword, firebaseAuth} = require('../controllers/auth-controllers');
+const { register, login, googleLogin, googleCallback, logout,  verifyEmail, forgotPassword, resetPassword, firebaseAuth} = require('../controllers/auth-controllers');
 const {firebaseAuthMiddleware} = require('../middlewares/authentication');
 
 const router = express.Router();
@@ -13,7 +13,7 @@ router.get("/google", googleLogin);
 router.get("/google/callback", googleCallback);
 
 //Password Reset Routes
-router.post("/request-password-reset", requestPasswordReset);
+router.post("/request-password-reset", forgotPassword);
 router.post("/reset-password", resetPassword);
 
 //Email Verification
