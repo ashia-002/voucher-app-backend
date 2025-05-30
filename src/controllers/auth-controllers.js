@@ -333,48 +333,53 @@ const verifyEmail = async (req, res) => {
 
 
 // Password reset request
-// const requestPasswordReset = async (req, res) => {
-//   const { email } = req.body;
+const requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
 
-//   try {
-//     let user = await Buyer.findOne({ email }) || await Seller.findOne({ email });
+  try {
+    let user = await Buyer.findOne({ email }) || await Seller.findOne({ email });
 
-//     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
-//     }
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-//     const resetToken = crypto.randomBytes(32).toString("hex");
-//     const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
-//     user.resetPasswordToken = resetPasswordToken;
-//     user.resetPasswordExpires = Date.now() + 6 * 60 * 60 * 1000; // 6 hours in milliseconds
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+    user.resetPasswordToken = resetPasswordToken;
+    user.resetPasswordExpires = Date.now() + 6 * 60 * 60 * 1000; // 6 hours in milliseconds
 
-//     await user.save();
+    await user.save();
 
-//     const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password?token=${resetToken}`;
+    const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password?token=${resetToken}`;
 
-//     const transporter = nodemailer.createTransport({
-//       service: "gmail",
-//       auth: {
-//         user: process.env.EMAIL,
-//         pass: "vdqg dlda bkmt amoi",
-//       },
-//     });
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL,
+        pass: "vdqg dlda bkmt amoi",
+      },
+    });
 
-//     const mailOptions = {
-//       from: process.env.EMAIL,
-//       to: user.email,
-//       subject: "Password Reset Request",
-//       html: `<p>Click the link below to reset your password:</p><a href="${resetLink}">Reset Password</a>`,
-//     };
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: user.email,
+      subject: "Password Reset Request",
+      html: `
+        <p>You requested to reset your password.</p>
+        <p>Click the link below to reset it:</p>
+        <a href=${resetLink}>Reset Password</a>
+        <p>If you didn't request this, please ignore this email.</p>
+      `,
+    };
 
-//     await transporter.sendMail(mailOptions);
+    await transporter.sendMail(mailOptions);
 
-//     res.status(200).json({ message: "Password reset link sent to your email" });
+    res.status(200).json({ message: "Password reset link sent to your email" });
 
-//   } catch (error) {
-//     res.status(500).json({ error: "Server Error" });
-//   }
-// };
+  } catch (error) {
+    res.status(500).json({ error: "Server Error" });
+  }
+};
 
 // const forgotPassword = async (req, res) => {
 //   const { email, role } = req.body;
@@ -424,51 +429,51 @@ const verifyEmail = async (req, res) => {
 //   }
 // };
 
-const forgotPassword = async (req, res) => {
-  const { email, role } = req.body;
+// const forgotPassword = async (req, res) => {
+//   const { email, role } = req.body;
 
-  try {
-    let user;
-    if (role === "buyer") user = await Buyer.findOne({ email });
-    else if (role === "seller") user = await Seller.findOne({ email });
-    else return res.status(400).json({ message: "Invalid role" });
+//   try {
+//     let user;
+//     if (role === "buyer") user = await Buyer.findOne({ email });
+//     else if (role === "seller") user = await Seller.findOne({ email });
+//     else return res.status(400).json({ message: "Invalid role" });
 
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (!user.isVerified) return res.status(400).json({ message: "Email not verified" });
+//     if (!user) return res.status(404).json({ message: "User not found" });
+//     if (!user.isVerified) return res.status(400).json({ message: "Email not verified" });
 
-    const resetToken = crypto.randomBytes(32).toString("hex");
-    user.resetPasswordToken = resetToken;
-    user.resetPasswordTokenExpiration = Date.now() + 15 * 60 * 1000; // 15 minutes
-    await user.save();
+//     const resetToken = crypto.randomBytes(32).toString("hex");
+//     user.resetPasswordToken = resetToken;
+//     user.resetPasswordTokenExpiration = Date.now() + 15 * 60 * 1000; // 15 minutes
+//     await user.save();
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL,
-        pass: "vdqg dlda bkmt amoi",
-      },
-    });
+//     const transporter = nodemailer.createTransport({
+//       service: "gmail",
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: "vdqg dlda bkmt amoi",
+//       },
+//     });
 
-    const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password/${resetToken}?role=${role}`;
+//     const resetLink = `https://voucher-app-backend.vercel.app/api/auth/reset-password/${resetToken}?role=${role}`;
 
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email,
-      subject: "Password Reset Request",
-      html: `
-        <p>You requested to reset your password.</p>
-        <p>Click the link below to reset it:</p>
-        <a href=${resetLink}>Reset Password</a>
-        <p>If you didn't request this, please ignore this email.</p>
-      `,
-    };
+//     const mailOptions = {
+//       from: process.env.EMAIL,
+//       to: email,
+//       subject: "Password Reset Request",
+//       html: `
+//         <p>You requested to reset your password.</p>
+//         <p>Click the link below to reset it:</p>
+//         <a href=${resetLink}>Reset Password</a>
+//         <p>If you didn't request this, please ignore this email.</p>
+//       `,
+//     };
 
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: "Reset link sent to your email" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error", error: err.message });
-  }
-};
+//     await transporter.sendMail(mailOptions);
+//     res.status(200).json({ message: "Reset link sent to your email" });
+//   } catch (err) {
+//     res.status(500).json({ message: "Server error", error: err.message });
+//   }
+// };
 
 // Reset password
 const resetPassword = async (req, res) => {
@@ -574,4 +579,4 @@ const firebaseAuth = async (req, res) => {
 };
 
 
-module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, forgotPassword, resetPassword, firebaseAuth };
+module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, requestPasswordReset, resetPassword, firebaseAuth };
