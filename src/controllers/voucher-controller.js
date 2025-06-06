@@ -1,5 +1,6 @@
 const Voucher = require("../models/Voucher");
 const Seller = require("../models/Seller");
+const Buyer = require("../models/Buyer");
 const Order = require("../models/Order");
 const mongoose = require("mongoose");
 const { notifyBuyersOnNewVoucher } = require("./notification");
@@ -145,7 +146,36 @@ exports.updateVoucher = async (req, res) => {
   }
 };
 
+// ✅ Force Expire a Voucher (Seller)
+exports.expireVoucherNow = async (req, res) => {
+  try {
+    const { voucherId } = req.params;
 
+    // Check if user is seller
+    if (!req.user || req.user.role !== "seller") {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    // Update the expiry date to now
+    const updatedVoucher = await Voucher.findOneAndUpdate(
+      { _id: voucherId, sellerId: req.user.id },
+      { expiryDate: new Date() },
+      { new: true }
+    );
+
+    if (!updatedVoucher) {
+      return res.status(404).json({ message: "Voucher not found or you do not own this voucher" });
+    }
+
+    res.json({
+      message: "Voucher expired successfully",
+      voucher: updatedVoucher,
+    });
+  } catch (error) {
+    console.error("Error expiring voucher:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
 // ✅ Delete Voucher (Seller)
 exports.deleteVoucher = async (req, res) => {
@@ -296,4 +326,96 @@ exports.getStoreDetails = async (req, res) => {
   }
 };
 
+exports.useVoucher = async (req, res) => {
+  try {
+    const { couponCode, buyerName, buyerEmail } = req.body;
 
+    if (!couponCode || !buyerName || !buyerEmail) {
+      return res.status(400).json({ message: "Coupon code, buyer name, and buyer email are required" });
+    }
+
+    // Find the voucher by coupon code
+    const voucher = await Voucher.findOne({ couponCode });
+
+    if (!voucher) {
+      return res.status(404).json({ message: "Invalid coupon code" });
+    }
+
+    // Check if voucher belongs to the current seller
+    if (voucher.sellerId.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Unauthorized: This voucher doesn't belong to you" });
+    }
+
+    // Check if voucher is expired
+    if (voucher.expiryDate < new Date()) {
+      return res.status(400).json({ message: "Voucher has expired" });
+    }
+
+    // Find the buyer to verify they exist and have purchased this voucher
+    const buyer = await Buyer.findOne({ name: buyerName, email: buyerEmail });
+
+    if (!buyer) {
+      return res.status(404).json({ message: "Buyer not found with provided details" });
+    }
+
+    // Check if this buyer has actually purchased this voucher
+    const order = await Order.findOne({
+      buyerId: buyer._id,
+      sellerId: voucher.sellerId,
+      "vouchers.voucherId": voucher._id
+    });
+
+    if (!order) {
+      return res.status(400).json({ message: "This buyer has not purchased this voucher" });
+    }
+
+     // Prevent re-use by same email
+    const alreadyUsed = voucher.usedBy.some(
+      entry => entry.email.toLowerCase() === buyerEmail.toLowerCase()
+    );
+
+    if (alreadyUsed) {
+      return res.status(400).json({ message: "This buyer has already used the voucher" });
+    }
+
+    // Mark as used
+    voucher.usedBy.push({ name: buyerName, email: buyerEmail });
+    await voucher.save();
+
+    res.json({ 
+      message: "Voucher marked as used successfully",
+      voucher: {
+        couponCode: voucher.couponCode,
+        title: voucher.title,
+        buyerName,
+        buyerEmail,
+        usedDate: new Date()
+      }
+    });
+
+  } catch (error) {
+    console.error("Error using voucher:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// GET /api/vouchers/used
+exports.getAllUsedVouchers = async (req, res) => {
+  try {
+    const vouchers = await Voucher.find({ "usedBy.0": { $exists: true } });
+
+    const formatted = vouchers.map(v => ({
+      title: v.title,
+      couponCode: v.couponCode,
+      usedBy: v.usedBy.map(entry => ({
+        name: entry.name,
+        email: entry.email,
+        usedAt: entry.usedAt
+      }))
+    }));
+
+    res.status(200).json({ total: formatted.length, vouchers: formatted });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch used vouchers" });
+  }
+};

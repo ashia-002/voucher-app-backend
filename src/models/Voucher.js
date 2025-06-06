@@ -21,6 +21,13 @@ const VoucherSchema = new mongoose.Schema(
 
     // ✅ Coupon Code Field
     couponCode: { type: String, required: true, unique: true }, 
+    usedBy: [
+      {
+      name: String,
+      email: String,
+      usedAt: { type: Date, default: Date.now }
+      }
+    ]
     
   },
   { toJSON: { virtuals: true } }
