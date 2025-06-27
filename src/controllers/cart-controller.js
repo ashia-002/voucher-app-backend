@@ -14,6 +14,11 @@ exports.addToCart = async (req, res) => {
     const voucher = await Voucher.findById(voucherId);
     if (!voucher) return res.status(404).json({ message: "Voucher not found" });
 
+    // Check if expired
+    if (new Date(voucher.expiryDate) < new Date()) {
+      return res.status(400).json({ message: "Voucher has expired" });
+    }
+
     // Find the selected price option
     const selectedPriceOption = voucher.priceOptions.find(
       (option) => option._id.toString() === priceOptionId
@@ -137,10 +142,11 @@ exports.checkoutWithStripe = async (req, res) => {
     }
 
     const totalAmount = cartItems.reduce((total, item) => total + item.priceOption.salePrice, 0);
-
+    const amountInCents = Math.round(totalAmount * 100);
+    
     // Create a Stripe payment intent
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalAmount * 100, // Convert to cents
+      amount: amountInCents, // Convert to cents
       currency: "usd",
       payment_method_types: ["card"],
       metadata: { buyerId },
