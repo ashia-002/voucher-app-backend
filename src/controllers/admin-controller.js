@@ -298,5 +298,102 @@ const getAdminCustomers = async (req, res) => {
     }
   };
   
-  
-module.exports = {login, getAdminCustomers, getAdminSellers, deleteSeller,addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats};
+  // Send Admin Notification to Users and Sellers
+const sendAdminNotification = async (req, res) => {
+  try {
+    // Check if request is from an admin
+    if (!req.user || req.user.role !== "admin") {
+      return res.status(403).json({ message: "Unauthorized: Admin access required" });
+    }
+
+    const { title, message, sendToUsers, sendToSellers } = req.body;
+
+    // Validate input
+    if (!title || !message) {
+      return res.status(400).json({ message: "Title and message are required" });
+    }
+
+    if (!sendToUsers && !sendToSellers) {
+      return res.status(400).json({ message: "At least one recipient group must be selected" });
+    }
+
+    // Arrays to store FCM tokens
+    let tokens = [];
+
+    // Get tokens from buyers if sendToUsers is true
+    if (sendToUsers) {
+      const buyers = await Buyer.find({ fcmToken: { $exists: true, $ne: null } })
+        .select("fcmToken");
+      
+      tokens = tokens.concat(buyers.map(buyer => buyer.fcmToken).filter(Boolean));
+    }
+
+    // Get tokens from sellers if sendToSellers is true
+    if (sendToSellers) {
+      const sellers = await Seller.find({ fcmToken: { $exists: true, $ne: null } })
+        .select("fcmToken");
+      
+      tokens = tokens.concat(sellers.map(seller => seller.fcmToken).filter(Boolean));
+    }
+
+    // Check if we have any tokens to send to
+    if (tokens.length === 0) {
+      return res.status(404).json({ message: "No recipients found with valid FCM tokens" });
+    }
+
+    // Prepare notification message
+    const notification = {
+      title: title,
+      body: message,
+    };
+
+    // Additional data payload
+    const data = {
+      type: "admin_notification",
+      timestamp: new Date().toISOString(),
+      sentBy: "admin"
+    };
+
+    // If we have a lot of tokens, we might need to send in batches
+    // Firebase has a limit of 500 tokens per multicast
+    const batchSize = 500;
+    const notificationPromises = [];
+
+    for (let i = 0; i < tokens.length; i += batchSize) {
+      const batch = tokens.slice(i, i + batchSize);
+      
+      const message = {
+        notification: notification,
+        data: data,
+        tokens: batch
+      };
+
+      notificationPromises.push(admin.messaging().sendMulticast(message));
+    }
+
+    // Wait for all notification batches to be sent
+    const results = await Promise.all(notificationPromises);
+    
+    // Count successful and failed messages
+    let successCount = 0;
+    let failureCount = 0;
+
+    results.forEach(result => {
+      successCount += result.successCount;
+      failureCount += result.failureCount;
+    });
+
+    res.status(200).json({
+      message: "Notifications sent",
+      totalRecipients: tokens.length,
+      successCount,
+      failureCount
+    });
+
+  } catch (error) {
+    console.error("Error sending admin notification:", error);
+    res.status(500).json({ message: "Error sending notification", error: error.message });
+  }
+};
+
+module.exports = {login, getAdminCustomers, getAdminSellers, deleteSeller,addVoucher, getAllActiveVouchers, getAllExpiredVouchers, deleteVoucher, updateVoucher, getAdminStats, sendAdminNotification};
