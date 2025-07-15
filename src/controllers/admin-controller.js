@@ -6,6 +6,7 @@ const Voucher = require("../models/Voucher");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const mongoose = require("mongoose");
+const admin = require("../config/firebase");
 
 const login = async (req, res) => {
     const { email, password } = req.body;
