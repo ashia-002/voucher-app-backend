@@ -1,5 +1,5 @@
 const express = require("express");
-const { register, login, googleLogin, googleCallback, logout,  verifyEmail, requestPasswordReset, resetPassword, firebaseAuth} = require('../controllers/auth-controllers');
+const { register, login, googleLogin, googleCallback, logout,  verifyEmail, requestPasswordReset, resetPassword, firebaseAuth, deleteProfile} = require('../controllers/auth-controllers');
 const {firebaseAuthMiddleware} = require('../middlewares/authentication');
 
 const router = express.Router();
@@ -23,6 +23,9 @@ router.post("/firebase-auth", firebaseAuth);
 router.get("/profile", firebaseAuthMiddleware, (req, res) => {
   res.json({ user: req.user });
 });
+
+//user profile delete
+router.delete("/profile/delete", deleteProfile)
 
 
 module.exports = router;

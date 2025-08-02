@@ -1,6 +1,8 @@
 const admin = require("../config/firebase");
 const Buyer = require("../models/Buyer");
 const Seller = require("../models/Seller");
+const Voucher = require("../models/Voucher");
+const Order = require("../models/Order");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -638,5 +640,53 @@ const firebaseAuth = async (req, res) => {
   }
 };
 
+const deleteProfile = async (req, res) => {
+  try {
+    const { role } = req.user; // role: 'buyer' or 'seller'
+    const userId = req.user.id;
 
-module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, requestPasswordReset, resetPassword, firebaseAuth };
+    if (!["buyer", "seller"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
+    if (role === "buyer") {
+      // Delete all orders linked to this buyer
+      await Order.deleteMany({ buyerId: userId });
+
+      // Delete the buyer
+      const deletedBuyer = await Buyer.findByIdAndDelete(userId);
+      if (!deletedBuyer) {
+        return res.status(404).json({ message: "Buyer not found" });
+      }
+
+      return res.status(200).json({
+        message: "Buyer profile and related orders deleted successfully",
+      });
+    }
+
+    if (role === "seller") {
+      // Delete all vouchers created by this seller
+      await Voucher.deleteMany({ sellerId: userId });
+
+      // Delete all orders linked to this seller
+      await Order.deleteMany({ sellerId: userId });
+
+      // Delete the seller
+      const deletedSeller = await Seller.findByIdAndDelete(userId);
+      if (!deletedSeller) {
+        return res.status(404).json({ message: "Seller not found" });
+      }
+
+      return res.status(200).json({
+        message: "Seller profile, vouchers, and related orders deleted successfully",
+      });
+    }
+
+  } catch (error) {
+    console.error("Error deleting profile:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+
+module.exports = { register, login, googleLogin, googleCallback, logout, verifyEmail, requestPasswordReset, resetPassword, firebaseAuth, deleteProfile };
