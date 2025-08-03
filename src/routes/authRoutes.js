@@ -1,6 +1,7 @@
 const express = require("express");
 const { register, login, googleLogin, googleCallback, logout,  verifyEmail, requestPasswordReset, resetPassword, firebaseAuth, deleteProfile} = require('../controllers/auth-controllers');
 const {firebaseAuthMiddleware} = require('../middlewares/authentication');
+const { authenticate, authorizeSeller, authorizeBuyer } = require("../middlewares/authentication");
 
 const router = express.Router();
 
@@ -25,7 +26,7 @@ router.get("/profile", firebaseAuthMiddleware, (req, res) => {
 });
 
 //user profile delete
-router.delete("/profile/delete", deleteProfile)
+router.delete("/profile/delete", authenticate,  deleteProfile)
 
 
 module.exports = router;
